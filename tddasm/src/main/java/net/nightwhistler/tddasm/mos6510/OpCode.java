@@ -2,7 +2,9 @@ package net.nightwhistler.tddasm.mos6510;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
+import io.vavr.control.Option;
 
+import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddress;
 import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddressX;
 import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddressY;
 import static net.nightwhistler.tddasm.mos6510.AddressingMode.IndexedIndirectX;
@@ -84,7 +86,7 @@ public enum OpCode {
         @Override
         public List<Tuple2<AddressingMode, Byte>> addressingModeMappings() {
             return List.of(
-                    mode(AddressingMode.AbsoluteAddress, 0x0D),
+                    mode(AbsoluteAddress, 0x8D),
                     mode(AbsoluteAddressX,0x9D),
                     mode(AbsoluteAddressY, 0x99),
                     mode(ZeroPageAddress , 0x85),
@@ -104,8 +106,8 @@ public enum OpCode {
     TXS,
     TYA;
 
-    public byte[] toBytes(AddressingMode addressingMode, byte... value) {
-        return new byte[0];
+    public Option<Byte> codeForAddressingMode(AddressingMode addressingMode) {
+        return addressingModeMappings().find(m -> m._1 == addressingMode).map(Tuple2::_2);
     }
 
     private static Tuple2<AddressingMode, Byte> mode(AddressingMode addressingMode, int byteValue) {

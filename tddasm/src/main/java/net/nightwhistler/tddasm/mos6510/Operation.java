@@ -6,6 +6,18 @@ import io.vavr.collection.List;
 
 public record Operation(OpCode opCode, AddressingMode addressingMode, byte... values) {
 
+    public byte[] toBytes(AddressingMode addressingMode, byte... value) {
+        byte firstByte = opCode.codeForAddressingMode(addressingMode).getOrElseThrow(
+                () -> new IllegalArgumentException("Unsupported addressingmode: " + addressingMode + " for opcode " + opCode)
+        );
+
+        byte[] result = new byte[value.length+1];
+        result[0] = firstByte;
+        System.arraycopy(value, 0, result, 1, value.length);
+
+        return result;
+    }
+
     public static Operation fromBytes(byte... bytes) {
         byte firstByte = bytes[0];
         var maybeMapping= List.of(OpCode.values())
@@ -20,7 +32,7 @@ public record Operation(OpCode opCode, AddressingMode addressingMode, byte... va
             } else {
                return new Operation(opCode, addressingMode, bytes[1], bytes[2]);
             }
-        }).getOrElseThrow(() -> new UnsupportedOperationException("Cannot map byte-value: " + Integer.toString(firstByte)));
+        }).getOrElseThrow(() -> new UnsupportedOperationException("Cannot map byte-value: " + Integer.toHexString(firstByte)));
 
     }
 }
