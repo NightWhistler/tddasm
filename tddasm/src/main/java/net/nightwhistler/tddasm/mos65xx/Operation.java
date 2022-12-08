@@ -22,11 +22,11 @@ public record Operation(OpCode opCode, AddressingMode addressingMode, byte... va
         byte firstByte = bytes[0];
         var maybeMapping= List.of(OpCode.values())
                 .flatMap(o -> o.addressingModeMappings().map(m -> new Tuple2<>(o, m)))
-                .filter(t -> t._2._2 == firstByte);
+                .filter(t -> t._2.code() == firstByte);
 
         return maybeMapping.map(tuple -> {
             OpCode opCode = tuple._1;
-            AddressingMode addressingMode = tuple._2._1;
+            AddressingMode addressingMode = tuple._2.addressingMode();
             if (bytes.length == 2) {
               return new Operation(opCode, addressingMode, bytes[1]);
             } else {

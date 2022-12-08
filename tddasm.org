@@ -1,0 +1,5 @@
+* Stuff for TDD-ASM
+
+* DONE Very, very, _very_ basic processor
+* DONE Enum with all the mnemonics
+* TODO Add byte-count and cycle-count to each Operation

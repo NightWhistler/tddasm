@@ -84,7 +84,7 @@ public enum OpCode {
     SRE,
     STA {
         @Override
-        public List<Tuple2<AddressingMode, Byte>> addressingModeMappings() {
+        public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
                     mode(AbsoluteAddress, 0x8D),
                     mode(AbsoluteAddressX,0x9D),
@@ -107,14 +107,18 @@ public enum OpCode {
     TYA;
 
     public Option<Byte> codeForAddressingMode(AddressingMode addressingMode) {
-        return addressingModeMappings().find(m -> m._1 == addressingMode).map(Tuple2::_2);
+        return addressingModeMappings()
+                .find(m -> m.addressingMode == addressingMode)
+                .map(AdressingModeMapping::code);
     }
 
-    private static Tuple2<AddressingMode, Byte> mode(AddressingMode addressingMode, int byteValue) {
-        return new Tuple2<>(addressingMode, (byte) byteValue);
+    private static AdressingModeMapping mode(AddressingMode addressingMode, int byteValue) {
+        return new AdressingModeMapping(addressingMode, (byte) byteValue);
     }
 
-    public List<Tuple2<AddressingMode, Byte>> addressingModeMappings() {
+    public List<AdressingModeMapping> addressingModeMappings() {
         return List.empty();
     }
+
+    record AdressingModeMapping(AddressingMode addressingMode, byte code){}
 }
