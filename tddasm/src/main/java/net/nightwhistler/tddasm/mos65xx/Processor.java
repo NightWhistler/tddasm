@@ -1,4 +1,4 @@
-package net.nightwhistler.tddasm.mos6510;
+package net.nightwhistler.tddasm.mos65xx;
 
 public class Processor {
     private byte accumulator;

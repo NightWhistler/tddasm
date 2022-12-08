@@ -1,16 +1,16 @@
-package net.nightwhistler.tddasm.mos6510;
+package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddress;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddressX;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.AbsoluteAddressY;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.IndexedIndirectX;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.IndirectIndexedY;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.ZeroPageAddress;
-import static net.nightwhistler.tddasm.mos6510.AddressingMode.ZeroPageAddressX;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddress;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressX;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressY;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndexedIndirectX;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndirectIndexedY;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddress;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddressX;
 
 /**
  * All the MOS6510 Opcodes, including illegal codes

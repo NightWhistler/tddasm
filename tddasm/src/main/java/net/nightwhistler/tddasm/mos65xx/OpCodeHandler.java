@@ -1,4 +1,4 @@
-package net.nightwhistler.tddasm.mos6510;
+package net.nightwhistler.tddasm.mos65xx;
 
 import java.util.function.Consumer;
 

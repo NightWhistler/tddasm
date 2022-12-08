@@ -1,4 +1,4 @@
-package net.nightwhistler.tddasm.mos6510;
+package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
