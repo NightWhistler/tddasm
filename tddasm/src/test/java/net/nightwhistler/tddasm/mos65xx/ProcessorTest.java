@@ -3,6 +3,7 @@ package net.nightwhistler.tddasm.mos65xx;
 import org.junit.jupiter.api.Test;
 
 import static net.nightwhistler.ByteUtils.bytes;
+import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProcessorTest {
@@ -12,29 +13,41 @@ class ProcessorTest {
      */
     @Test
     public void testLDAValue() {
-        var staOperation = new Operation(OpCode.LDA, AddressingMode.Value, (byte) 0x03);
+        var operation = operation(OpCode.LDA, AddressingMode.Value, 0x03);
         var processor = new Processor();
 
-        processor.performOperation(staOperation);
+        processor.performOperation(operation);
         assertEquals((byte) 0x03, processor.getAccumulatorValue());
     }
 
     @Test
     public void testLDXValue() {
-        var staOperation = new Operation(OpCode.LDX, AddressingMode.Value, (byte) 0x03);
+        var operation = operation(OpCode.LDX, AddressingMode.Value, 0x03);
         var processor = new Processor();
 
-        processor.performOperation(staOperation);
+        processor.performOperation(operation);
         assertEquals((byte) 0x03, processor.getXRegisterValue());
     }
 
     @Test
     public void testLDYValue() {
-        var staOperation = new Operation(OpCode.LDY, AddressingMode.Value, (byte) 0x03);
+        var operation = operation(OpCode.LDY, AddressingMode.Value, 0x03);
         var processor = new Processor();
 
-        processor.performOperation(staOperation);
+        processor.performOperation(operation);
         assertEquals((byte) 0x03, processor.getYRegisterValue());
+    }
+
+    @Test
+    public void testSTAValue() {
+        var processor = new Processor();
+        var ldaOperation = operation(OpCode.LDA, AddressingMode.Value, 0x03);
+        var staOperation = operation(OpCode.STA, AddressingMode.AbsoluteAddress, 0x0C69);
+
+        processor.performOperation(ldaOperation);
+        processor.performOperation(staOperation);
+
+        assertEquals(0x03, processor.peekValue(0x0c69));
     }
 
 
@@ -42,7 +55,7 @@ class ProcessorTest {
     public void testLDAAddress() {
 
         //Load the accumulator from $4030
-        var staOperation = new Operation(OpCode.LDA, AddressingMode.AbsoluteAddress, bytes(0x30, 0x40));
+        var staOperation = operation(OpCode.LDA, AddressingMode.AbsoluteAddress, 0x4030);
         var processor = new Processor();
 
         //Assure the address was 0
@@ -57,7 +70,7 @@ class ProcessorTest {
 
     @Test
     public void testZeroFlag() {
-        var staOperation = new Operation(OpCode.LDY, AddressingMode.Value, (byte) 0x03);
+        var staOperation = operation(OpCode.LDY, AddressingMode.Value, 0x03);
         var processor = new Processor();
 
         processor.performOperation(staOperation);
@@ -66,7 +79,7 @@ class ProcessorTest {
         assertFalse(processor.isZeroFlagSet());
 
         //Read from an empty address
-        processor.performOperation(new Operation(OpCode.LDY, AddressingMode.AbsoluteAddress, bytes(0x22, 0x11)));
+        processor.performOperation(operation(OpCode.LDY, AddressingMode.AbsoluteAddress, 0x1122));
         assertEquals((byte) 0x00, processor.getYRegisterValue());
         assertTrue(processor.isZeroFlagSet());
     }

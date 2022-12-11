@@ -2,9 +2,25 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
+import net.nightwhistler.ByteUtils;
+
+import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
+import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
 
 
 public record Operation(OpCode opCode, AddressingMode addressingMode, byte... values) {
+
+    public static Operation operation(OpCode opCode, AddressingMode addressingMode, int value) {
+        //Single byte
+        if ( (value & JAVA_BYTE_0_MASK) == value) {
+            return new Operation(opCode, addressingMode, new byte[] { (byte) value});
+        } else {
+            byte lowByte = (byte) (value & JAVA_BYTE_0_MASK);
+            byte highByte = (byte) (value & JAVA_BYTE_1_MASK);
+
+            return new Operation(opCode, addressingMode, new byte[] { lowByte, highByte });
+        }
+    }
 
     public byte[] toBytes(AddressingMode addressingMode, byte... value) {
         byte firstByte = opCode.codeForAddressingMode(addressingMode).getOrElseThrow(

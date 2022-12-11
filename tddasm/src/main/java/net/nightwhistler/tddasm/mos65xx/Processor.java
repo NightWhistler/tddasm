@@ -19,11 +19,20 @@ public class Processor {
             //Load Acumulator
             case LDA -> setFlag(accumulator = value);
 
+            //Store Accumulator
+            case STA -> pokeValue(location(operation.addressingMode(), operation.values()), accumulator);
+
             //Load X register
             case LDX -> setFlag(xRegister = value);
 
+            //Store X register
+            case STX -> pokeValue(location(operation.addressingMode(), operation.values()), xRegister);
+
             //Load y register
             case LDY -> setFlag(yRegister = value);
+
+            //Store y register
+            case STY -> pokeValue(location(operation.addressingMode(), operation.values()), yRegister);
 
             //Clear carry flag
             case CLC -> carryFlag = false;
@@ -36,30 +45,39 @@ public class Processor {
         this.negativeFlag = result < 0;
     }
 
-    private byte value(AddressingMode addressingMode, byte[] operand) {
+    private int location(AddressingMode addressingMode, byte[] operand) {
         return switch (addressingMode) {
-            case Value -> operand[0];
-            case AbsoluteAddress -> peekValue(toInt(operand[0], operand[1]));
-            case AbsoluteAddressX -> peekValue(toInt(operand[0], operand[1]) + xRegister);
-            case AbsoluteAddressY -> peekValue(toInt(operand[0], operand[1]) + yRegister);
-            case ZeroPageAddress -> peekValue(toInt(operand[0], (byte) 0x00));
-            case ZeroPageAddressX -> peekValue(toInt(operand[0], (byte) 0x00) + xRegister);
+            case AbsoluteAddress -> toInt(operand[0], operand[1]);
+            case AbsoluteAddressX -> toInt(operand[0], operand[1]) + xRegister;
+            case AbsoluteAddressY -> toInt(operand[0], operand[1]) + yRegister;
+            case ZeroPageAddress -> toInt(operand[0], (byte) 0x00);
+            case ZeroPageAddressX -> toInt(operand[0], (byte) 0x00) + xRegister;
+            case ZeroPageAddressY -> toInt(operand[0], (byte) 0x00) + yRegister;
             case IndirectIndexedY -> {
                 //Must be 0-paged
                 int address = toInt(operand[0], (byte) 0x00);
                 var lowByte = peekValue(address);
                 var highByte = peekValue(address+1);
 
-                yield peekValue(toInt(lowByte, highByte) + yRegister);
+                yield toInt(lowByte, highByte) + yRegister;
             }
             case IndexedIndirectX -> {
                 int address = toInt(operand[0], (byte) 0x00);
                 var lowByte = peekValue(address + xRegister);
                 var highByte = peekValue(address+ xRegister +1);
 
-                yield peekValue(toInt(lowByte, highByte));
+                yield toInt(lowByte, highByte);
             }
+            case Value -> throw new IllegalArgumentException("Can't use Value for location");
         };
+    }
+
+    private byte value(AddressingMode addressingMode, byte[] operand) {
+        if (addressingMode == AddressingMode.Value) {
+            return operand[0];
+        } else {
+            return peekValue(location(addressingMode, operand));
+        }
     }
 
     private int toInt(byte lowByte, byte highByte) {

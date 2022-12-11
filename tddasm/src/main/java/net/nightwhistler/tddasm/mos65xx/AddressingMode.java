@@ -7,6 +7,7 @@ public enum AddressingMode {
     AbsoluteAddressY,
     ZeroPageAddress,
     ZeroPageAddressX,
+    ZeroPageAddressY,
     IndexedIndirectX,
     IndirectIndexedY,
 }

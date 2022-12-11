@@ -9,8 +9,10 @@ import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressX;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressY;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndexedIndirectX;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndirectIndexedY;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Value;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddress;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddressX;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddressY;
 
 /**
  * All the MOS6510 Opcodes, including illegal codes
@@ -55,9 +57,45 @@ public enum OpCode {
     JSR,
     LAS,
     LAX,
-    LDA,
-    LDX,
-    LDY,
+    LDA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(Value, 0xA9),
+                    mode(AbsoluteAddress, 0xAD),
+                    mode(AbsoluteAddressX, 0xBD),
+                    mode(AbsoluteAddressY, 0xB9),
+                    mode(ZeroPageAddress, 0xA5),
+                    mode(ZeroPageAddressX, 0xB5),
+                    mode(IndexedIndirectX, 0xA1),
+                    mode(IndirectIndexedY, 0xB1)
+            );
+        }
+    },
+    LDX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(Value, 0xA2),
+                    mode(AbsoluteAddress, 0xAE),
+                    mode(AbsoluteAddressY, 0xBE),
+                    mode(ZeroPageAddress, 0xA6),
+                    mode(ZeroPageAddressY, 0xB6)
+            );
+        }
+    },
+    LDY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(Value, 0xA0),
+                    mode(AbsoluteAddress, 0xAC),
+                    mode(AbsoluteAddressX, 0xBC),
+                    mode(ZeroPageAddress, 0xA4),
+                    mode(ZeroPageAddressX, 0xB4)
+            );
+        }
+    },
     LSR,
     NOP,
     ORA,
