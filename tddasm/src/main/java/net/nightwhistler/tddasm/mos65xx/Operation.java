@@ -8,7 +8,18 @@ import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
 import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
 
 
-public record Operation(OpCode opCode, AddressingMode addressingMode, byte... values) {
+public record Operation(OpCode opCode, AddressingMode addressingMode, byte... values) implements ProgramElement {
+
+    public Operation {
+        if (!opCode.supportAddressingMode(addressingMode)) {
+            throw new IllegalArgumentException(
+                    String.format("Opcode %s does not support AddressingMode %s", opCode, addressingMode));
+        }
+    }
+
+    public static Operation operation(OpCode opCode) {
+        return new Operation(opCode, AddressingMode.Implied, new byte[0]);
+    }
 
     public static Operation operation(OpCode opCode, AddressingMode addressingMode, int value) {
         //Single byte

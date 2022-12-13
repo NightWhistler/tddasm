@@ -134,8 +134,27 @@ public enum OpCode {
             );
         }
     },
-    STX,
-    STY,
+    STX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(AbsoluteAddress, 0x8E),
+                    mode(ZeroPageAddress, 0x86),
+                    mode(ZeroPageAddressY, 0x96)
+            );
+        }
+    },
+
+    STY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(AbsoluteAddress, 0x8C),
+                    mode(ZeroPageAddress, 0x84),
+                    mode(ZeroPageAddressX, 0x94)
+            );
+        }
+    },
     TAS,
     TAX,
     TAY,
@@ -148,6 +167,11 @@ public enum OpCode {
         return addressingModeMappings()
                 .find(m -> m.addressingMode == addressingMode)
                 .map(AdressingModeMapping::code);
+    }
+
+    public boolean supportAddressingMode(AddressingMode addressingMode) {
+        return addressingModeMappings().map(AdressingModeMapping::addressingMode)
+                .contains(addressingMode);
     }
 
     private static AdressingModeMapping mode(AddressingMode addressingMode, int byteValue) {

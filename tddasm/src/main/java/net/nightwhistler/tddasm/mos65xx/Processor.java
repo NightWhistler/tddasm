@@ -68,7 +68,9 @@ public class Processor {
 
                 yield toInt(lowByte, highByte);
             }
-            case Value -> throw new IllegalArgumentException("Can't use Value for location");
+            default -> throw new IllegalArgumentException(
+                    String.format("Can't use %s for location", addressingMode)
+            );
         };
     }
 
