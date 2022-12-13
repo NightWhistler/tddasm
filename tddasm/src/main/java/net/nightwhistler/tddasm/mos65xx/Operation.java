@@ -2,34 +2,40 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
-import net.nightwhistler.ByteUtils;
 
 import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
 import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
 
 
-public record Operation(OpCode opCode, AddressingMode addressingMode, byte... values) implements ProgramElement {
+public record Operation(OpCode opCode, Operand operand) implements ProgramElement {
+
+    public AddressingMode addressingMode() {
+        return operand.addressingMode();
+    }
 
     public Operation {
-        if (!opCode.supportAddressingMode(addressingMode)) {
+        if (!opCode.supportAddressingMode(operand.addressingMode())) {
             throw new IllegalArgumentException(
-                    String.format("Opcode %s does not support AddressingMode %s", opCode, addressingMode));
+                    String.format("Opcode %s does not support AddressingMode %s", opCode, addressingMode()));
         }
     }
 
     public static Operation operation(OpCode opCode) {
-        return new Operation(opCode, AddressingMode.Implied, new byte[0]);
+        return new Operation(opCode, new Operand.NoValue());
     }
 
     public static Operation operation(OpCode opCode, AddressingMode addressingMode, int value) {
+        if (addressingMode == AddressingMode.Value) {
+            return new Operation(opCode, new Operand.ByteValue((byte) (value & JAVA_BYTE_0_MASK)));
+        }
         //Single byte
         if ( (value & JAVA_BYTE_0_MASK) == value) {
-            return new Operation(opCode, addressingMode, new byte[] { (byte) value});
+            return new Operation(opCode, new Operand.OneByteAddress(addressingMode, (byte) value));
         } else {
             byte lowByte = (byte) (value & JAVA_BYTE_0_MASK);
             byte highByte = (byte) (value & JAVA_BYTE_1_MASK);
 
-            return new Operation(opCode, addressingMode, new byte[] { lowByte, highByte });
+            return new Operation(opCode, new Operand.TwoByteAddress(addressingMode, lowByte, highByte));
         }
     }
 
@@ -55,9 +61,9 @@ public record Operation(OpCode opCode, AddressingMode addressingMode, byte... va
             OpCode opCode = tuple._1;
             AddressingMode addressingMode = tuple._2.addressingMode();
             if (bytes.length == 2) {
-              return new Operation(opCode, addressingMode, bytes[1]);
+              return new Operation(opCode, new Operand.OneByteAddress(addressingMode, bytes[1]));
             } else {
-               return new Operation(opCode, addressingMode, bytes[1], bytes[2]);
+               return new Operation(opCode, new Operand.TwoByteAddress(addressingMode, bytes[1], bytes[2]));
             }
         }).getOrElseThrow(() -> new UnsupportedOperationException("Cannot map byte-value: " + Integer.toHexString(firstByte)));
 

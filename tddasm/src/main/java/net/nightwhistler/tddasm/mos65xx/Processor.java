@@ -14,25 +14,26 @@ public class Processor {
     private byte[] memory = new byte[MEMORY_SIZE];
 
     public void performOperation(Operation operation) {
-        byte value = value(operation.addressingMode(), operation.values());
+       byte value = value(operation.operand());
+
         switch (operation.opCode()) {
             //Load Acumulator
             case LDA -> setFlag(accumulator = value);
 
             //Store Accumulator
-            case STA -> pokeValue(location(operation.addressingMode(), operation.values()), accumulator);
+            case STA -> pokeValue(location((Operand.AddressOperand) operation.operand()), accumulator);
 
             //Load X register
             case LDX -> setFlag(xRegister = value);
 
             //Store X register
-            case STX -> pokeValue(location(operation.addressingMode(), operation.values()), xRegister);
+            case STX -> pokeValue(location((Operand.AddressOperand) operation.operand()), xRegister);
 
             //Load y register
             case LDY -> setFlag(yRegister = value);
 
             //Store y register
-            case STY -> pokeValue(location(operation.addressingMode(), operation.values()), yRegister);
+            case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
 
             //Clear carry flag
             case CLC -> carryFlag = false;
@@ -45,41 +46,62 @@ public class Processor {
         this.negativeFlag = result < 0;
     }
 
-    private int location(AddressingMode addressingMode, byte[] operand) {
-        return switch (addressingMode) {
-            case AbsoluteAddress -> toInt(operand[0], operand[1]);
-            case AbsoluteAddressX -> toInt(operand[0], operand[1]) + xRegister;
-            case AbsoluteAddressY -> toInt(operand[0], operand[1]) + yRegister;
-            case ZeroPageAddress -> toInt(operand[0], (byte) 0x00);
-            case ZeroPageAddressX -> toInt(operand[0], (byte) 0x00) + xRegister;
-            case ZeroPageAddressY -> toInt(operand[0], (byte) 0x00) + yRegister;
-            case IndirectIndexedY -> {
-                //Must be 0-paged
-                int address = toInt(operand[0], (byte) 0x00);
-                var lowByte = peekValue(address);
-                var highByte = peekValue(address+1);
+    private int resolveLabel(String label) {
+        return -1;
+    }
 
-                yield toInt(lowByte, highByte) + yRegister;
-            }
-            case IndexedIndirectX -> {
-                int address = toInt(operand[0], (byte) 0x00);
-                var lowByte = peekValue(address + xRegister);
-                var highByte = peekValue(address+ xRegister +1);
+    private int location(Operand.AddressOperand addressOperand) {
+        return switch (addressOperand) {
+            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand.label());
+            case Operand.OneByteAddress oneByteAddress -> {
 
-                yield toInt(lowByte, highByte);
+                byte byteValue = oneByteAddress.byteValue();
+
+                yield switch (oneByteAddress.addressingMode()) {
+                    case ZeroPageAddress -> byteValue;
+                    case ZeroPageAddressX -> byteValue + xRegister;
+                    case ZeroPageAddressY -> byteValue + yRegister;
+                    case IndirectIndexedY -> {
+                        //Must be 0-paged
+                        int address = byteValue;
+                        var lowByte = peekValue(address);
+                        var highByte = peekValue(address+1);
+
+                        yield toInt(lowByte, highByte) + yRegister;
+                    }
+                    case IndexedIndirectX -> {
+                        int address = byteValue;
+                        var lowByte = peekValue(address + xRegister);
+                        var highByte = peekValue(address+ xRegister +1);
+
+                        yield toInt(lowByte, highByte);
+                    }
+
+                    default -> throw new IllegalArgumentException(
+                            String.format("Can't use %s for OneByteAddress", oneByteAddress.addressingMode())
+                    );
+                };
             }
-            default -> throw new IllegalArgumentException(
-                    String.format("Can't use %s for location", addressingMode)
-            );
+            case Operand.TwoByteAddress twoByteAddress -> {
+                var baseAddress = toInt(twoByteAddress.lowByte(), twoByteAddress.highByte());
+                yield switch (twoByteAddress.addressingMode()) {
+                    case AbsoluteAddress -> baseAddress;
+                    case AbsoluteAddressX -> baseAddress + xRegister;
+                    case AbsoluteAddressY -> baseAddress + yRegister;
+                    default -> throw new IllegalArgumentException(
+                            String.format("Can't use %s for TwoByteAddress", twoByteAddress.addressingMode())
+                    );
+                };
+            }
         };
     }
 
-    private byte value(AddressingMode addressingMode, byte[] operand) {
-        if (addressingMode == AddressingMode.Value) {
-            return operand[0];
-        } else {
-            return peekValue(location(addressingMode, operand));
-        }
+    private byte value(Operand operand) {
+        return switch (operand) {
+            case Operand.ByteValue byteValue ->  byteValue.value();
+            case Operand.AddressOperand addressOperand ->  peekValue(location(addressOperand));
+            case default -> throw new IllegalArgumentException("Illegal Operand: " + operand);
+        };
     }
 
     private int toInt(byte lowByte, byte highByte) {

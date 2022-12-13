@@ -15,6 +15,7 @@ class OperationTest {
         Operation operation = Operation.fromBytes(values);
         assertEquals(OpCode.STA, operation.opCode());
         assertEquals(AddressingMode.AbsoluteAddress, operation.addressingMode());
-        assertArrayEquals(bytes(0x33, 0x55), operation.values());
+        assertEquals(new Operand.TwoByteAddress(AddressingMode.AbsoluteAddress, (byte) 0x33, (byte) 0x55),
+                operation.operand());
     }
 }
