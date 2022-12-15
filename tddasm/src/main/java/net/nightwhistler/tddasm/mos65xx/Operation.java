@@ -24,19 +24,12 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
         return new Operation(opCode, new Operand.NoValue());
     }
 
-    public static Operation operation(OpCode opCode, AddressingMode addressingMode, int value) {
-        if (addressingMode == AddressingMode.Value) {
-            return new Operation(opCode, new Operand.ByteValue((byte) (value & JAVA_BYTE_0_MASK)));
-        }
-        //Single byte
-        if ( (value & JAVA_BYTE_0_MASK) == value) {
-            return new Operation(opCode, new Operand.OneByteAddress(addressingMode, (byte) value));
-        } else {
-            byte lowByte = (byte) (value & JAVA_BYTE_0_MASK);
-            byte highByte = (byte) (value & JAVA_BYTE_1_MASK);
+    public static Operation operation(OpCode opCode, String label) {
+        return new Operation(opCode, new Operand.LabelOperand(label));
+    }
 
-            return new Operation(opCode, new Operand.TwoByteAddress(addressingMode, lowByte, highByte));
-        }
+    public static Operation operation(OpCode opCode, Operand operand) {
+        return new Operation(opCode, operand);
     }
 
     public byte[] toBytes(AddressingMode addressingMode, byte... value) {

@@ -1,5 +1,8 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
+import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
+
 public sealed interface Operand {
     AddressingMode addressingMode();
 
@@ -29,6 +32,30 @@ public sealed interface Operand {
             //which gives them absolute addressing
             return AddressingMode.AbsoluteAddress;
         }
+    }
+
+    static ByteValue value(int value) {
+        return new ByteValue((byte) value);
+    }
+
+    static TwoByteAddress absolute(int value) {
+        byte lowByte = (byte) (value & JAVA_BYTE_0_MASK);
+        byte highByte = (byte) (value & JAVA_BYTE_1_MASK);
+
+        return new TwoByteAddress(AddressingMode.AbsoluteAddress, lowByte, highByte);
+    }
+
+
+    static OneByteAddress zeroPage(int value) {
+        return new OneByteAddress(AddressingMode.ZeroPageAddress, (byte) value);
+    }
+
+    static OneByteAddress indexedIndirectY(OneByteAddress oneByteAddress) {
+        return new OneByteAddress(AddressingMode.IndirectIndexedY, oneByteAddress.byteValue);
+    }
+
+    static OneByteAddress indexedIndirectY(int value) {
+        return new OneByteAddress(AddressingMode.IndirectIndexedY, (byte) value);
     }
 
 }

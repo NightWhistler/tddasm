@@ -69,7 +69,6 @@ public class ByteUtils {
         return result;
     }
 
-
     /**
      * Small util method which allows easy creation of
      * byte arrays from int values.
@@ -86,5 +85,12 @@ public class ByteUtils {
         return result;
     }
 
+    public static byte highByte(int value) {
+        return (byte) ((value & JAVA_BYTE_1_MASK) >>> 8);
+    }
+
+    public static byte lowByte(int value) {
+        return (byte) (value & JAVA_BYTE_0_MASK);
+    }
 
 }
