@@ -7,11 +7,11 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.absolute;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProgramBuilderTest {
+class ProgramElementsBuilderTest {
 
     @Test
     public void testSingleInstruction() {
-        var elements = new ProgramBuilder()
+        var elements = new ProgramElementsBuilder()
                 .lda(value(0x03))
                 .build();
 
@@ -21,7 +21,7 @@ class ProgramBuilderTest {
 
     @Test
     public void testProgram() {
-        var elements = new ProgramBuilder()
+        var elements = new ProgramElementsBuilder()
                 .lda(value(0x03))
                 .label("some_label")
                 .iny()

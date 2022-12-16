@@ -1,4 +1,5 @@
 package net.nightwhistler.tddasm.mos65xx;
 
-public record Data(byte[] contents) implements ProgramElement {
+public record Data(byte[] bytes) implements ProgramElement {
+
 }

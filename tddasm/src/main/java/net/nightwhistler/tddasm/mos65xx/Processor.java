@@ -9,9 +9,13 @@ public class Processor {
     private boolean negativeFlag;
     private boolean carryFlag;
 
+    private int programCounter;
+
     //64kb of memory, C64 style.
     private static int MEMORY_SIZE = (int) Math.pow(2, 16);
     private byte[] memory = new byte[MEMORY_SIZE];
+
+    private Program currentProgram = null;
 
     public void performOperation(Operation operation) {
        byte value = value(operation.operand());
@@ -118,6 +122,29 @@ public class Processor {
         return memory[offset];
     }
 
+    /**
+     * Loads the program into the right memory location,
+     * and also stores the reference
+     * @param program
+     */
+    public void load(Program program) {
+        this.currentProgram = program;
+        byte[] programData = program.compile();
+        int startLocation = program.startAddress().toInt();
+
+        System.arraycopy(programData, 0, this.memory, startLocation, programData.length);
+    }
+
+    /*
+        Doing a "step"
+         - Read program counter
+         - Find ProgramElement at that offset if Program present (might be more than 1 if labels are present)
+         - Read the right amount of bytes from memory at that offset
+         - Verify against the ProgramElement, decide if execution should proceed
+         - Execute the ProgramElement if it is an Operation
+         - Update the Program counter
+
+     */
     public byte getAccumulatorValue() {
         return accumulator;
     }

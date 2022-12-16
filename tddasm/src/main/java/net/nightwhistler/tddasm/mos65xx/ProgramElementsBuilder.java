@@ -1,22 +1,21 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
-import net.nightwhistler.ByteUtils;
 
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 
-public class ProgramBuilder {
+public class ProgramElementsBuilder {
     private List<ProgramElement> programElements = List.empty();
 
-    private ProgramBuilder(List<ProgramElement> elements) {
+    private ProgramElementsBuilder(List<ProgramElement> elements) {
         this.programElements = elements;
     }
 
-    public ProgramBuilder() {
+    public ProgramElementsBuilder() {
 
     }
 
-    public ProgramBuilder startAt(Operand.TwoByteAddress address) {
+    public ProgramElementsBuilder startAt(Operand.TwoByteAddress address) {
         return withElement(
                 new StartingAddress(littleEndianBytesToInt(
                         address.lowByte(),
@@ -30,81 +29,80 @@ public class ProgramBuilder {
      * @param elements
      * @return
      */
-    public ProgramBuilder include(List<ProgramElement> elements) {
-        return new ProgramBuilder(this.programElements.appendAll(elements));
+    public ProgramElementsBuilder include(List<ProgramElement> elements) {
+        return new ProgramElementsBuilder(this.programElements.appendAll(elements));
     }
 
-    public ProgramBuilder label(String label) {
+    public ProgramElementsBuilder label(String label) {
         return withElement(new Label(label));
     }
 
-    public ProgramBuilder lda(Operand operand) {
+    public ProgramElementsBuilder lda(Operand operand) {
         return withOperation(OpCode.LDA, operand);
     }
 
-    public ProgramBuilder sta(Operand operand) {
+    public ProgramElementsBuilder sta(Operand operand) {
         return withOperation(OpCode.STA, operand);
     }
 
-    public ProgramBuilder rts() {
+    public ProgramElementsBuilder rts() {
         return withOperation(OpCode.RTS, Operand.noValue());
     }
 
-    public ProgramBuilder sty(Operand operand) {
+    public ProgramElementsBuilder sty(Operand operand) {
         return withOperation(OpCode.STY, operand);
     }
 
-    public ProgramBuilder iny() {
+    public ProgramElementsBuilder iny() {
         return withOperation(OpCode.INY, Operand.noValue());
     }
 
-    public ProgramBuilder inx() {
+    public ProgramElementsBuilder inx() {
         return withOperation(OpCode.INX, Operand.noValue());
     }
 
-    public ProgramBuilder ldy(Operand operand) {
+    public ProgramElementsBuilder ldy(Operand operand) {
         return withOperation(OpCode.LDY, operand);
     }
 
-    public ProgramBuilder jmp(String label) {
+    public ProgramElementsBuilder jmp(String label) {
         return withOperation(OpCode.JMP, new Operand.LabelOperand(label));
     }
 
-    public ProgramBuilder jmp(Operand.AddressOperand operand) {
+    public ProgramElementsBuilder jmp(Operand.AddressOperand operand) {
         return withOperation(OpCode.JMP, operand);
     }
 
-    public ProgramBuilder jsr(String label) {
+    public ProgramElementsBuilder jsr(String label) {
         return withOperation(OpCode.JSR, new Operand.LabelOperand(label));
     }
 
-    public ProgramBuilder jsr(Operand.TwoByteAddress operand) {
+    public ProgramElementsBuilder jsr(Operand.TwoByteAddress operand) {
         return withOperation(OpCode.JSR, operand);
     }
 
-    public ProgramBuilder beq(String label) {
-        return withOperation(OpCode.BEQ, new Operand.LabelOperand(label));
+    public ProgramElementsBuilder beq(String label) {
+        return withOperation(OpCode.BEQ, new Operand.LabelOperand(label, true));
     }
 
-
-    public ProgramBuilder bne(String label) {
-        return withOperation(OpCode.BNE, new Operand.LabelOperand(label));
+    public ProgramElementsBuilder bne(String label) {
+        return withOperation(OpCode.BNE, new Operand.LabelOperand(label, true));
     }
 
-    public ProgramBuilder cpy(Operand operand) {
+    public ProgramElementsBuilder cpy(Operand operand) {
         return withOperation(OpCode.CPY, operand);
     }
 
-    public ProgramBuilder cmp(Operand operand) {
+    public ProgramElementsBuilder cmp(Operand operand) {
         return withOperation(OpCode.CMP, operand);
     }
 
-    private ProgramBuilder withOperation(OpCode opCode, Operand operand) {
+    private ProgramElementsBuilder withOperation(OpCode opCode, Operand operand) {
         return withElement(new Operation(opCode, operand));
     }
 
-    private ProgramBuilder withElement(ProgramElement element) {
-        return new ProgramBuilder(programElements.append(element));
+    private ProgramElementsBuilder withElement(ProgramElement element) {
+        return new ProgramElementsBuilder(programElements.append(element));
     }
 
     public List<ProgramElement> build() {

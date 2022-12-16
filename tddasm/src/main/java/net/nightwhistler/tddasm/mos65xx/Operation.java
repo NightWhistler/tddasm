@@ -33,10 +33,12 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
         return new Operation(opCode, operand);
     }
 
-    public byte[] toBytes(AddressingMode addressingMode, byte... value) {
-        byte firstByte = opCode.codeForAddressingMode(addressingMode).getOrElseThrow(
-                () -> new IllegalArgumentException("Unsupported addressingmode: " + addressingMode + " for opcode " + opCode)
+    public byte[] bytes() {
+        byte firstByte = opCode.codeForAddressingMode(addressingMode()).getOrElseThrow(
+                () -> new IllegalArgumentException("Unsupported AddressingMode: " + addressingMode() + " for OpCode " + opCode)
         );
+
+        byte[] value = operand.bytes();
 
         byte[] result = new byte[value.length+1];
         result[0] = firstByte;

@@ -32,7 +32,12 @@ public enum OpCode {
     BEQ,
     BIT,
     BMI,
-    BNE,
+    BNE {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(AddressingMode.Relative, 0xD0));
+        }
+    },
     BPL,
     BRK,
     BVC,
@@ -41,7 +46,21 @@ public enum OpCode {
     CLD,
     CLI,
     CLV,
-    CMP,
+    CMP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(Value, 0xC9),
+                    mode(AbsoluteAddress, 0xCD),
+                    mode(AbsoluteAddressX, 0xDD),
+                    mode(AbsoluteAddressY, 0xD9),
+                    mode(ZeroPageAddress, 0xC5),
+                    mode(ZeroPageAddressX, 0xD5),
+                    mode(IndexedIndirectX, 0xC1),
+                    mode(IndirectIndexedY, 0xD1)
+            );
+        }
+    },
     CPX,
     CPY,
     DCP,
@@ -50,7 +69,11 @@ public enum OpCode {
     DEY,
     EOR,
     INC,
-    INX,
+    INX {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(Implied, 0xE8));
+        }
+    },
     INY {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {

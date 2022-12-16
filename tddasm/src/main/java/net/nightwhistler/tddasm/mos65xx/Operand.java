@@ -1,10 +1,16 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import net.nightwhistler.ByteUtils;
+
 import static net.nightwhistler.ByteUtils.highByte;
 import static net.nightwhistler.ByteUtils.lowByte;
 
 public sealed interface Operand {
     AddressingMode addressingMode();
+
+    default byte[] bytes() {
+        return new byte[0];
+    }
 
     sealed interface AddressOperand extends Operand {}
 
@@ -31,6 +37,11 @@ public sealed interface Operand {
         public AddressingMode addressingMode() {
             return AddressingMode.Value;
         }
+
+        @Override
+        public byte[] bytes() {
+            return new byte[]{ value };
+        }
     }
 
     record OneByteAddress(AddressingMode addressingMode, byte byteValue) implements AddressOperand {
@@ -50,6 +61,11 @@ public sealed interface Operand {
         public OneByteAddress indirectIndexedY() {
             return new OneByteAddress(AddressingMode.IndirectIndexedY, byteValue);
         }
+
+        @Override
+        public byte[] bytes() {
+            return new byte[]{ byteValue };
+        }
     }
 
     record TwoByteAddress(AddressingMode addressingMode, byte lowByte, byte highByte) implements AddressOperand {
@@ -64,14 +80,40 @@ public sealed interface Operand {
         public TwoByteAddress yIndexed() {
             return new TwoByteAddress(AddressingMode.AbsoluteAddressY, lowByte, highByte);
         }
+
+        @Override
+        public byte[] bytes() {
+            return new byte[]{ lowByte, highByte };
+        }
+
+        public int toInt() {
+            return ByteUtils.littleEndianBytesToInt(lowByte, highByte);
+        }
+
     }
 
-    record LabelOperand(String label) implements AddressOperand {
+    record LabelOperand(String label, boolean relative) implements AddressOperand {
+        public LabelOperand(String label) {
+            this(label, false);
+        }
+
         @Override
         public AddressingMode addressingMode() {
-            //Labels are resolved to an absolute address,
-            //which gives them absolute addressing
-            return AddressingMode.AbsoluteAddress;
+            if (relative ) {
+                return AddressingMode.Relative;
+            } else {
+                return AddressingMode.AbsoluteAddress;
+            }
+        }
+
+        @Override
+        public byte[] bytes() {
+            //FIXME: This gives the right size but obviously not the right value.
+            if (relative) {
+                return new byte[1];
+            } else {
+                return new byte[2];
+            }
         }
     }
 
