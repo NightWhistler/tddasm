@@ -69,6 +69,9 @@ public sealed interface Operand {
     }
 
     record TwoByteAddress(AddressingMode addressingMode, byte lowByte, byte highByte) implements AddressOperand {
+        //FIXME: This is used a lot, maybe make a separate Address type
+        //Then have AddressOperand be a record wrapping an Address and an AddressingMode
+
         public TwoByteAddress(byte lowByte, byte highByte) {
             this(AddressingMode.AbsoluteAddress, lowByte, highByte);
         }
@@ -88,6 +91,11 @@ public sealed interface Operand {
 
         public int toInt() {
             return ByteUtils.littleEndianBytesToInt(lowByte, highByte);
+        }
+
+        public TwoByteAddress plus(int offset) {
+            int newAddress = toInt() + offset;
+            return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
         }
 
     }

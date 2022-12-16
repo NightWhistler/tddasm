@@ -150,7 +150,12 @@ public enum OpCode {
     ROR,
     RRA,
     RTI,
-    RTS,
+    RTS {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(Implied, 0x60));
+        }
+    },
     SAX,
     SBC,
     SBX,

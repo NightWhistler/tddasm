@@ -168,4 +168,8 @@ public class Processor {
     public boolean isZeroFlagSet() {
         return zeroFlag;
     }
+
+    public void setProgramCounter(Operand.TwoByteAddress address) {
+        this.programCounter = address.toInt();
+    }
 }

@@ -15,15 +15,6 @@ public class ProgramElementsBuilder {
 
     }
 
-    public ProgramElementsBuilder startAt(Operand.TwoByteAddress address) {
-        return withElement(
-                new StartingAddress(littleEndianBytesToInt(
-                        address.lowByte(),
-                        address.highByte()
-                ))
-        );
-    }
-
     /**
      * Adds all the elements from another source, like another builder
      * @param elements
