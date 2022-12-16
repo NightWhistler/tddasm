@@ -25,6 +25,15 @@ public class ProgramBuilder {
         );
     }
 
+    /**
+     * Adds all the elements from another source, like another builder
+     * @param elements
+     * @return
+     */
+    public ProgramBuilder include(List<ProgramElement> elements) {
+        return new ProgramBuilder(this.programElements.appendAll(elements));
+    }
+
     public ProgramBuilder label(String label) {
         return withElement(new Label(label));
     }
@@ -38,7 +47,7 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder rts() {
-        return withOperation(OpCode.RTS, new Operand.NoValue());
+        return withOperation(OpCode.RTS, Operand.noValue());
     }
 
     public ProgramBuilder sty(Operand operand) {
@@ -46,11 +55,11 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder iny() {
-        return withOperation(OpCode.INY, new Operand.NoValue());
+        return withOperation(OpCode.INY, Operand.noValue());
     }
 
     public ProgramBuilder inx() {
-        return withOperation(OpCode.INX, new Operand.NoValue());
+        return withOperation(OpCode.INX, Operand.noValue());
     }
 
     public ProgramBuilder ldy(Operand operand) {
@@ -59,6 +68,18 @@ public class ProgramBuilder {
 
     public ProgramBuilder jmp(String label) {
         return withOperation(OpCode.JMP, new Operand.LabelOperand(label));
+    }
+
+    public ProgramBuilder jmp(Operand.AddressOperand operand) {
+        return withOperation(OpCode.JMP, operand);
+    }
+
+    public ProgramBuilder jsr(String label) {
+        return withOperation(OpCode.JSR, new Operand.LabelOperand(label));
+    }
+
+    public ProgramBuilder jsr(Operand.TwoByteAddress operand) {
+        return withOperation(OpCode.JSR, operand);
     }
 
     public ProgramBuilder beq(String label) {

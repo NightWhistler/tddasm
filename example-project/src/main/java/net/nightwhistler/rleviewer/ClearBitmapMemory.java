@@ -5,21 +5,9 @@ import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.mos65xx.ProgramElement;
 
-import static net.nightwhistler.ByteUtils.highByte;
-import static net.nightwhistler.ByteUtils.lowByte;
-import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndirectIndexedY;
-import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Value;
-import static net.nightwhistler.tddasm.mos65xx.Label.label;
-import static net.nightwhistler.tddasm.mos65xx.OpCode.BEQ;
-import static net.nightwhistler.tddasm.mos65xx.OpCode.INY;
-import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
-import static net.nightwhistler.tddasm.mos65xx.OpCode.LDY;
-import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
 import static net.nightwhistler.tddasm.mos65xx.Operand.absolute;
-import static net.nightwhistler.tddasm.mos65xx.Operand.indexedIndirectY;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
-import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 
 public interface ClearBitmapMemory {
     int VIC_REG_1=0xD011;
@@ -87,7 +75,7 @@ public interface ClearBitmapMemory {
                 .label("inner_loop")
                 // We store in the low byte of the memory vector, but the instruction will also
                 // read the next (high) byte
-                .sta(indexedIndirectY(MEM_VECTOR_LOW))
+                .sta(MEM_VECTOR_LOW.indirectIndexedY())
                 .iny() //We increase y, until it rolls over to 0
                 .beq("loop_end") //If the roll-over occurred, jump out of the loop
                 .cpy(value(BITMAP_DATA_END.lowByte()))

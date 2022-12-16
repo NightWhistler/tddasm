@@ -6,6 +6,8 @@ import io.vavr.control.Option;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddress;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressX;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressY;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteIndirect;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Implied;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndexedIndirectX;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.IndirectIndexedY;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Value;
@@ -49,11 +51,29 @@ public enum OpCode {
     EOR,
     INC,
     INX,
-    INY,
+    INY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(Implied, 0xC8));
+        }
+    },
     ISC,
     JAM,
-    JMP,
-    JSR,
+    JMP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(AbsoluteAddress, 0x4C),
+                    mode(AbsoluteIndirect, 0x6C)
+            );
+        }
+    },
+    JSR {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(AbsoluteAddress, 0x20));
+        }
+    },
     LAS,
     LAX,
     LDA {
@@ -178,7 +198,7 @@ public enum OpCode {
     }
 
     public List<AdressingModeMapping> addressingModeMappings() {
-        return List.empty();
+        throw new UnsupportedOperationException(String.format("OpCode %s has no addressing modes. This means it's either illegal or not yet implemented.", this));
     }
 
     record AdressingModeMapping(AddressingMode addressingMode, byte code){}

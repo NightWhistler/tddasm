@@ -2,6 +2,7 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
+import io.vavr.control.Try;
 import org.junit.jupiter.api.Test;
 
 
@@ -11,7 +12,8 @@ class OpCodeTest {
 
     private List<OpCode> findCodesForByte(int byteValue) {
         return List.of(OpCode.values())
-                .flatMap(oc -> oc.addressingModeMappings().map(m -> new Tuple2<>(oc, m)))
+                .flatMap(oc -> Try.of(() -> oc.addressingModeMappings()).getOrElse(List.empty())
+                        .map(m -> new Tuple2<>(oc, m)))
                 .filter(t -> t._2.code() == (byte) byteValue)
                 .map(Tuple2::_1);
     }

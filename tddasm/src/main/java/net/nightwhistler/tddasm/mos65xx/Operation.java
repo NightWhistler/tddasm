@@ -2,6 +2,7 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
+import io.vavr.control.Try;
 
 import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
 import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
@@ -16,12 +17,12 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
     public Operation {
         if (!opCode.supportAddressingMode(operand.addressingMode())) {
             throw new IllegalArgumentException(
-                    String.format("Opcode %s does not support AddressingMode %s", opCode, addressingMode()));
+                    String.format("Opcode %s does not support AddressingMode %s", opCode, operand.addressingMode()));
         }
     }
 
     public static Operation operation(OpCode opCode) {
-        return new Operation(opCode, new Operand.NoValue());
+        return new Operation(opCode, Operand.noValue());
     }
 
     public static Operation operation(OpCode opCode, String label) {
@@ -47,7 +48,7 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
     public static Operation fromBytes(byte... bytes) {
         byte firstByte = bytes[0];
         var maybeMapping= List.of(OpCode.values())
-                .flatMap(o -> o.addressingModeMappings().map(m -> new Tuple2<>(o, m)))
+                .flatMap(o -> Try.of(() -> o.addressingModeMappings()).getOrElse(List.empty()).map(m -> new Tuple2<>(o, m)))
                 .filter(t -> t._2.code() == firstByte);
 
         return maybeMapping.map(tuple -> {
