@@ -3,3 +3,23 @@
 * DONE Very, very, _very_ basic processor
 * DONE Enum with all the mnemonics
 * TODO Add byte-count and cycle-count to each Operation
+* TODO Be able to load a program
+  There are some tricky things to consider there. I could stay very close to
+  the real CPU and convert all the opertions to bytes, load those into memory
+  and then when executing them parse them back into Operations.
+
+  This is the most realistic and will also allow self-modifying code to work.
+  It loses a lot of context and information though that is contained in the
+  original Operations. Most importantly labels would all be translated to
+  addresses.
+
+  My current thinking fo along the lines of storing both next to each other
+  and validating the contents of memory against the known loaded program. I
+  could maybe put a switch in the Processor class that either allows or
+  disallows self-modifying code. If it's allowed we'd try to parse the bytes
+  in case of a mismatch and update the Program that we've stored, if it's not
+  set we'd throw an exception when there is a mismatch.
+* TODO Create a Maven code generation plugin.
+  This should take simple .asm files and generate Java code that calls the
+  ProgramBuilder.
+* TODO Figure out how to support interrupts
