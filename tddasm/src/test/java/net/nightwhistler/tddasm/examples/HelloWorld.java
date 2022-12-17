@@ -1,4 +1,4 @@
-package net.nightwhistler.rleviewer;
+package net.nightwhistler.tddasm.examples;
 
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.Program;
@@ -9,7 +9,12 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 public class HelloWorld {
-    public Program main() {
+    public static Program main() {
+
+        /*
+        Hello world example taken from
+        https://8bitheaven.home.blog/2020/01/07/c64-assembly-hello-world/
+         */
         return new Program(Operand.absolute(0x4000),
                 new ProgramElementsBuilder()
                       .label("start")
@@ -30,7 +35,7 @@ public class HelloWorld {
                       .label("draw_text")
                         .lda(value(0x00))
                       .label("draw_loop")
-                        .lda(addressOf("message").xIndexed())
+                        .lda(addressOf("msg").xIndexed())
                         .inx()
                         .cpx(value(0x28))
                         .bne("draw_loop")

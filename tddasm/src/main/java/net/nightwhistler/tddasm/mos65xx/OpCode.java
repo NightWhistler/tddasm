@@ -61,7 +61,16 @@ public enum OpCode {
             );
         }
     },
-    CPX,
+    CPX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(Value, 0xE0),
+                    mode(AbsoluteAddress, 0xEC),
+                    mode(ZeroPageAddress, 0xE4)
+            );
+        }
+    },
     CPY,
     DCP,
     DEC,
