@@ -1,5 +1,10 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import io.vavr.collection.List;
+import io.vavr.control.Option;
+
+import java.util.Optional;
+
 public class Processor {
     private byte accumulator;
     private byte xRegister;
@@ -50,13 +55,16 @@ public class Processor {
         this.negativeFlag = result < 0;
     }
 
-    private int resolveLabel(String label) {
+    private int resolveLabel(Operand.LabelOperand labelOperand) {
+//        switch (labelOperand.addressingMode()) {
+//            case AbsoluteAddress ->
+//        }
         return -1;
     }
 
     private int location(Operand.AddressOperand addressOperand) {
         return switch (addressOperand) {
-            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand.label());
+            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
             case Operand.OneByteAddress oneByteAddress -> {
 
                 byte byteValue = oneByteAddress.byteValue();
@@ -141,10 +149,29 @@ public class Processor {
          - Find ProgramElement at that offset if Program present (might be more than 1 if labels are present)
          - Read the right amount of bytes from memory at that offset
          - Verify against the ProgramElement, decide if execution should proceed
-         - Execute the ProgramElement if it is an Operation
          - Update the Program counter
+         - Execute the ProgramElement if it is an Operation
 
      */
+
+    public void step() {
+        if ( this.currentProgram == null ) {
+            return;
+        }
+
+        List<ProgramElement> elements = this.currentProgram.elementsForLocation(Operand.absolute(this.programCounter));
+        Option<Operation> op = elements.find(pe -> pe instanceof Operation)
+                .map(pe -> (Operation) pe);
+
+        op.forEach(operation -> {
+            programCounter += operation.length();
+
+            //todo verify operation
+
+            performOperation(operation);
+        });
+
+    }
     public byte getAccumulatorValue() {
         return accumulator;
     }

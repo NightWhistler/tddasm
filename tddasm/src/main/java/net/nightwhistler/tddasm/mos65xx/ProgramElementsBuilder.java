@@ -2,7 +2,10 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
 
+import java.nio.charset.Charset;
+
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
 
 public class ProgramElementsBuilder {
     private List<ProgramElement> programElements = List.empty();
@@ -26,6 +29,14 @@ public class ProgramElementsBuilder {
 
     public ProgramElementsBuilder label(String label) {
         return withElement(new Label(label));
+    }
+
+    public ProgramElementsBuilder text(String text) {
+        return data(text.getBytes(Charset.forName("ASCII")));
+    }
+
+    public ProgramElementsBuilder data(byte[] data) {
+        return withElement(new Data(data));
     }
 
     public ProgramElementsBuilder lda(Operand operand) {
@@ -73,11 +84,15 @@ public class ProgramElementsBuilder {
     }
 
     public ProgramElementsBuilder beq(String label) {
-        return withOperation(OpCode.BEQ, new Operand.LabelOperand(label, true));
+        return withOperation(OpCode.BEQ, new Operand.LabelOperand(label, Relative));
     }
 
     public ProgramElementsBuilder bne(String label) {
-        return withOperation(OpCode.BNE, new Operand.LabelOperand(label, true));
+        return withOperation(OpCode.BNE, new Operand.LabelOperand(label, Relative));
+    }
+
+    public ProgramElementsBuilder cpx(Operand operand) {
+        return withOperation(OpCode.CPX, operand);
     }
 
     public ProgramElementsBuilder cpy(Operand operand) {

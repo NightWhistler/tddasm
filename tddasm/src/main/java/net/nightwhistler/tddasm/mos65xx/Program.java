@@ -28,6 +28,30 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
         });
     }
 
+    /**
+     * Resolves a label to an address, if it exists
+     * @param labelOperand the label to resolve
+     * @param offset the location to resolve relative to for Relative Addressing
+     * @return The resolved address or none()
+     */
+    public Option<? extends Operand.AddressOperand> resolveLabel(Operand.LabelOperand labelOperand, Operand.TwoByteAddress offset) {
+        return switch (labelOperand.addressingMode()) {
+
+            case AbsoluteAddress -> resolveLabelAbsolute(labelOperand.label());
+
+            case AbsoluteAddressX -> resolveLabelAbsolute(labelOperand.label()).map(Operand.TwoByteAddress::xIndexed);
+
+            case AbsoluteAddressY -> resolveLabelAbsolute(labelOperand.label()).map(Operand.TwoByteAddress::yIndexed);
+
+            case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset)
+                    .map(b -> new Operand.OneByteAddress(AddressingMode.Relative, b));
+
+            default -> throw new IllegalStateException(
+                    String.format("Invalid use of AddressingMode %s with for label", labelOperand.addressingMode()));
+        };
+
+    }
+
     private List<Tuple2<Operand.TwoByteAddress, ProgramElement>> offsets() {
         if (elements.isEmpty()) {
             return List.empty();
@@ -74,21 +98,13 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
             ProgramElement element = elements.get(i);
             if ( element instanceof Operation op && op.operand() instanceof Operand.LabelOperand lo) {
                 OpCode opCode = op.opCode();
-                Operation constructedOperation = switch (op.addressingMode()) {
-                    case AbsoluteAddress -> new Operation(opCode,
-                            resolveLabelAbsolute(lo.label()).getOrElseThrow(
-                                    () -> new IllegalStateException("Cannot resolve label " + lo.label())
-                            ));
-                    case Relative -> new Operation(opCode, new Operand.OneByteAddress(AddressingMode.Relative,
-                            resolveLabelRelativeTo(lo.label(), absoluteOffset).getOrElseThrow(
-                                    () -> new IllegalStateException("Cannot resolve label " + lo.label())
-                            )));
+                var resolvedAddress = resolveLabel(lo, absoluteOffset);
+                elementData = resolvedAddress
+                        .map(a -> new Operation(opCode, a).bytes())
+                        .getOrElseThrow(
+                                () -> new IllegalStateException("Cannot resolve label " + lo.label())
+                        );
 
-                    default -> throw new IllegalStateException(
-                            String.format("Invalid use of AddressingMode %s with OpCode %s", op.addressingMode(), opCode));
-                };
-
-                elementData = constructedOperation.bytes();
             } else {
                 elementData = element.bytes();
             }

@@ -100,29 +100,33 @@ public sealed interface Operand {
 
     }
 
-    record LabelOperand(String label, boolean relative) implements AddressOperand {
+    record LabelOperand(String label, AddressingMode addressingMode) implements AddressOperand {
         public LabelOperand(String label) {
-            this(label, false);
+            this(label, AddressingMode.AbsoluteAddress);
         }
 
-        @Override
-        public AddressingMode addressingMode() {
-            if (relative ) {
-                return AddressingMode.Relative;
-            } else {
-                return AddressingMode.AbsoluteAddress;
-            }
+        public LabelOperand xIndexed() {
+            return new LabelOperand(label, AddressingMode.AbsoluteAddressX);
         }
+
+        public LabelOperand yIndexed() {
+            return new LabelOperand(label, AddressingMode.AbsoluteAddressY);
+        }
+
 
         @Override
         public byte[] bytes() {
             //FIXME: This gives the right size but obviously not the right value.
-            if (relative) {
+            if (addressingMode == AddressingMode.Relative) {
                 return new byte[1];
             } else {
                 return new byte[2];
             }
         }
+    }
+
+    static LabelOperand addressOf(String label) {
+        return new LabelOperand(label);
     }
 
     static ByteValue value(int value) {
