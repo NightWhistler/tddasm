@@ -4,7 +4,6 @@ import io.vavr.collection.List;
 
 import java.nio.charset.Charset;
 
-import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
 
 public class ProgramElementsBuilder {
@@ -35,12 +34,39 @@ public class ProgramElementsBuilder {
         return data(text.getBytes(Charset.forName("ASCII")));
     }
 
+    public ProgramElementsBuilder screenCodes(String text) {
+        byte[] ascii = text.getBytes(Charset.forName("ASCII"));
+        byte[] petscii = new byte[ascii.length];
+        for (int i =0; i < ascii.length; i++ ) {
+            byte a = ascii[i];
+            byte p;
+
+            if (a >= 97 && a < 122 ) {
+                p = (byte) (a - 96);
+            } else {
+                p = a;
+            }
+
+            petscii[i] = p;
+        }
+
+        return data(petscii);
+    }
+
     public ProgramElementsBuilder data(byte[] data) {
         return withElement(new Data(data));
     }
 
     public ProgramElementsBuilder lda(Operand operand) {
         return withOperation(OpCode.LDA, operand);
+    }
+
+    public ProgramElementsBuilder ldx(Operand operand) {
+        return withOperation(OpCode.LDX, operand);
+    }
+
+    public ProgramElementsBuilder dex() {
+        return withOperation(OpCode.DEX, Operand.noValue());
     }
 
     public ProgramElementsBuilder sta(Operand operand) {

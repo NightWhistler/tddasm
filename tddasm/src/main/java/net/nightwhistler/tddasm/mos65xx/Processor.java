@@ -3,8 +3,6 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
-import java.util.Optional;
-
 public class Processor {
     private byte accumulator;
     private byte xRegister;
@@ -159,7 +157,7 @@ public class Processor {
             return;
         }
 
-        List<ProgramElement> elements = this.currentProgram.elementsForLocation(Operand.absolute(this.programCounter));
+        List<ProgramElement> elements = this.currentProgram.elementsForLocation(Operand.address(this.programCounter));
         Option<Operation> op = elements.find(pe -> pe instanceof Operation)
                 .map(pe -> (Operation) pe);
 

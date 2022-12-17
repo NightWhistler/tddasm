@@ -5,7 +5,7 @@ import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramElementsBuilder;
 import net.nightwhistler.tddasm.mos65xx.ProgramElement;
 
-import static net.nightwhistler.tddasm.mos65xx.Operand.absolute;
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
@@ -14,7 +14,7 @@ public interface ClearBitmapMemory {
     int VIC_REG_2=0xD016;
     int VIC_BITMAP_VECTOR=0xD018;
     int BITMAP_DATA_START=0x2000;
-    Operand.TwoByteAddress BITMAP_DATA_END=absolute(0x3F3F);
+    Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
     Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
     Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
     int KERNAL_CLEAR_SCR=0x544;

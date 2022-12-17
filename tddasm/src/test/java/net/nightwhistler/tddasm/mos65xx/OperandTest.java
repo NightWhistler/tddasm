@@ -8,7 +8,7 @@ class OperandTest {
 
     @Test
     public void testAbsoluteAddress() {
-        Operand.TwoByteAddress absolute = Operand.absolute(0x2345);
+        Operand.TwoByteAddress absolute = Operand.address(0x2345);
         assertEquals(absolute, new Operand.TwoByteAddress(AddressingMode.AbsoluteAddress, (byte) 0x45, (byte) 0x23));
     }
 

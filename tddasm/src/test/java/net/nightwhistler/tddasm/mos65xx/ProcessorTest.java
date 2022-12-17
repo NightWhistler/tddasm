@@ -2,8 +2,7 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import org.junit.jupiter.api.Test;
 
-import static net.nightwhistler.ByteUtils.bytes;
-import static net.nightwhistler.tddasm.mos65xx.Operand.absolute;
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,7 +43,7 @@ class ProcessorTest {
     public void testSTAValue() {
         var processor = new Processor();
         var ldaOperation = operation(OpCode.LDA, value(0x03));
-        var staOperation = operation(OpCode.STA, absolute(0x0C69));
+        var staOperation = operation(OpCode.STA, address(0x0C69));
 
         processor.performOperation(ldaOperation);
         processor.performOperation(staOperation);
@@ -57,7 +56,7 @@ class ProcessorTest {
     public void testLDAAddress() {
 
         //Load the accumulator from $4030
-        var staOperation = operation(OpCode.LDA, absolute(0x4030));
+        var staOperation = operation(OpCode.LDA, address(0x4030));
         var processor = new Processor();
 
         //Assure the address was 0
@@ -81,7 +80,7 @@ class ProcessorTest {
         assertFalse(processor.isZeroFlagSet());
 
         //Read from an empty address
-        processor.performOperation(operation(OpCode.LDY, absolute(0x1122)));
+        processor.performOperation(operation(OpCode.LDY, address(0x1122)));
         assertEquals((byte) 0x00, processor.getYRegisterValue());
         assertTrue(processor.isZeroFlagSet());
     }

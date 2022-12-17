@@ -133,7 +133,7 @@ public sealed interface Operand {
         return new ByteValue((byte) value);
     }
 
-    static TwoByteAddress absolute(int value) {
+    static TwoByteAddress address(int value) {
         byte lowByte = lowByte(value);
         byte highByte = highByte(value);
 

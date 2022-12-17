@@ -64,4 +64,6 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
         }).getOrElseThrow(() -> new UnsupportedOperationException("Cannot map byte-value: " + Integer.toHexString(firstByte)));
 
     }
+
+
 }

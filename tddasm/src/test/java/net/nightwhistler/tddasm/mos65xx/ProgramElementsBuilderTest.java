@@ -3,7 +3,8 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import org.junit.jupiter.api.Test;
 
-import static net.nightwhistler.tddasm.mos65xx.Operand.absolute;
+import static net.nightwhistler.ByteUtils.bytes;
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +27,7 @@ class ProgramElementsBuilderTest {
                 .label("some_label")
                 .iny()
                 .jsr("print_y")
-                .jmp(absolute(0x4567))
+                .jmp(address(0x4567))
                 .build();
 
         assertEquals(5, elements.size());
@@ -39,5 +40,26 @@ class ProgramElementsBuilderTest {
         ), elements);
     }
 
+    @Test
+    public void testText() {
+        var elements = new ProgramElementsBuilder()
+                .text("ABC!")
+                .build();
+
+        var dataElement = (Data) elements.head();
+        assertEquals(4, dataElement.length());
+        assertArrayEquals(bytes(65, 66, 67, 33), dataElement.bytes());
+    }
+
+    @Test
+    public void testPETSCII() {
+        var elements = new ProgramElementsBuilder()
+                .screenCodes("abcABC!")
+                .build();
+
+        var dataElement = (Data) elements.head();
+        assertEquals(7, dataElement.length());
+        assertArrayEquals(bytes(01, 02, 03, 65, 66, 67, 33), dataElement.bytes());
+    }
 
 }

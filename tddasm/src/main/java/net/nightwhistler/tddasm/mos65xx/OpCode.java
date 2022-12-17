@@ -74,7 +74,12 @@ public enum OpCode {
     CPY,
     DCP,
     DEC,
-    DEX,
+    DEX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(Implied, 0xCA));
+        }
+    },
     DEY,
     EOR,
     INC,

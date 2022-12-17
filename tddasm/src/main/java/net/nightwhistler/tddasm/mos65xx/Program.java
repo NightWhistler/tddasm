@@ -19,7 +19,9 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
     public Option<Byte> resolveLabelRelativeTo(String label, Operand.TwoByteAddress toAddress) {
         return resolveLabelAbsolute(label).map( a -> {
-            int diff = a.toInt() - toAddress.toInt();
+            //The plus 2 is because the address is relative to the program counter _after_
+            //reading the relative jump instruction itself, which is 2 bytes long.
+            int diff = (a.toInt() - (toAddress.toInt()+2));
             if ( diff < -128 || diff > 128 ) {
                 throw new IllegalArgumentException("Address difference must be between -128 and 128");
             }
