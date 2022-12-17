@@ -3,6 +3,8 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
+import java.util.function.Consumer;
+
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 
 public class Processor {
@@ -22,6 +24,17 @@ public class Processor {
 
     private Program currentProgram = null;
 
+    private List<ProcessorEvent.Listener> listeners = List.empty();
+
+    /**
+     * Tells the Processor to process an operation.
+     *
+     * Since this is not read from memory, it does not
+     * affect the Program Counter and won't raise OperationPerformed
+     * events. If a memory location is changed, that will raise an event.
+     *
+     * @param operation
+     */
     public void performOperation(Operation operation) {
        byte value = value(operation.operand());
 
@@ -46,7 +59,26 @@ public class Processor {
 
             //Clear carry flag
             case CLC -> carryFlag = false;
+
+            case JMP -> jumpIf(operation.operand(), true);
+
+            case BNE -> jumpIf(operation.operand(), !zeroFlag);
+
+            case BEQ -> jumpIf(operation.operand(), zeroFlag);
+
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
+        }
+    }
+
+    private void jumpIf(Operand operand, boolean condition) {
+        if (condition) {
+            int jumpTo = switch (operand) {
+                case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
+                case Operand.AddressOperand addressOperand -> location(addressOperand);
+                default -> throw new IllegalArgumentException("Unsupported operand type for jumps: " + operand.getClass().getSimpleName());
+            };
+
+            this.programCounter = address(jumpTo);
         }
     }
 
@@ -113,6 +145,14 @@ public class Processor {
         };
     }
 
+    private void fireEvent(ProcessorEvent processorEvent) {
+        this.listeners.forEach(l -> l.receiveEvent(processorEvent));
+    }
+
+    public void registerEventListener(ProcessorEvent.Listener listener) {
+        this.listeners = this.listeners.append(listener);
+    }
+
     private byte value(Operand operand) {
         return switch (operand) {
             case Operand.ByteValue byteValue ->  byteValue.value();
@@ -127,7 +167,9 @@ public class Processor {
 
     public void pokeValue(int location, byte value) {
         int offset = (location & 0x00FF);
+        byte oldValue = memory[offset];
         memory[offset] = value;
+        fireEvent(new ProcessorEvent.MemoryLocationChanged(address(location), oldValue, value));
     }
 
     public byte peekValue(int location) {
@@ -169,11 +211,13 @@ public class Processor {
                 .map(pe -> (Operation) pe);
 
         op.forEach(operation -> {
+            var programCounterBefore = programCounter;
             programCounter = programCounter.plus(operation.length());
 
-            //todo verify operation
+            //todo verify operation?
 
             performOperation(operation);
+            fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
         });
 
     }

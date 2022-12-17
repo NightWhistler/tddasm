@@ -1,12 +1,20 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class ProcessorTest {
 
     /**
@@ -85,5 +93,55 @@ class ProcessorTest {
         assertTrue(processor.isZeroFlagSet());
     }
 
+    @Test
+    public void testMemoryChangedEvents() {
+        ProcessorEvent.Listener mockEventListener = Mockito.mock(ProcessorEvent.Listener.class);
+        var processor = new Processor();
+        processor.registerEventListener(mockEventListener);
+
+        processor.pokeValue(0x3000, (byte) 0x33);
+        verify(mockEventListener, times(1)).receiveEvent(
+                new ProcessorEvent.MemoryLocationChanged(address(0x3000), (byte) 0x00, (byte) 0x33)
+        );
+    }
+
+    @Test
+    public void testOperationPerformedEvent() {
+        ProcessorEvent.Listener mockEventListener = Mockito.mock(ProcessorEvent.Listener.class);
+        var processor = new Processor();
+        processor.registerEventListener(mockEventListener);
+
+        //Very simple: load a value into the accumulator, then store it in memory.
+        Program miniProg = new ProgramBuilder()
+                .lda(value(0x03))
+                .sta(address(0x3344))
+                .buildProgram();
+
+        processor.load(miniProg);
+        processor.setProgramCounter(miniProg.startAddress());
+
+        //Perform one operation
+        processor.step();
+
+        //LDA
+        verify(mockEventListener).receiveEvent(
+                new ProcessorEvent.OperationPerformed(miniProg.startAddress(), new Operation(OpCode.LDA, value(0x03)))
+        );
+
+        //Perform the next operation
+        processor.step();
+
+        //Memory change event
+        verify(mockEventListener).receiveEvent(
+                new ProcessorEvent.MemoryLocationChanged(address(0x3344), (byte) 0x00, (byte) 0x03)
+        );
+
+        //STA operation performed
+        verify(mockEventListener).receiveEvent(
+                new ProcessorEvent.OperationPerformed(miniProg.startAddress().plus(2), new Operation(OpCode.STA, address(0x3344)))
+        );
+
+
+    }
 
 }
