@@ -1,8 +1,7 @@
 package net.nightwhistler.tddasm.examples;
 
-import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.Program;
-import net.nightwhistler.tddasm.mos65xx.ProgramElementsBuilder;
+import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.util.ProgramWriter;
 
 import java.io.File;
@@ -20,8 +19,7 @@ public class HelloWorld {
         Hello world example taken from
         https://8bitheaven.home.blog/2020/01/07/c64-assembly-hello-world/
          */
-        return new Program(Operand.address(0x4000),
-                new ProgramElementsBuilder()
+        return new ProgramBuilder()
                       .label("start")
                         //Make screen black and text white
                         .lda(value(0x00))
@@ -52,7 +50,7 @@ public class HelloWorld {
                         .bne("draw_loop")
                         .rts()
 
-                    .build());
+                .buildProgram();
     }
 
     public static void main(String argv[]) {
@@ -60,7 +58,7 @@ public class HelloWorld {
             File output = new File("hello_world.prg");
             output.createNewFile();
             FileOutputStream fout = new FileOutputStream(output);
-            ProgramWriter.writeProgram(main(), fout);
+            ProgramWriter.writeProgram(main().withBASICStarter(), fout);
             fout.close();
         } catch (IOException e) {
             e.printStackTrace();

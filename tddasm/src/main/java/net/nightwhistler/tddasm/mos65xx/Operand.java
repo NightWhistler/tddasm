@@ -113,10 +113,8 @@ public sealed interface Operand {
             return new LabelOperand(label, AddressingMode.AbsoluteAddressY);
         }
 
-
         @Override
         public byte[] bytes() {
-            //FIXME: This gives the right size but obviously not the right value.
             if (addressingMode == AddressingMode.Relative) {
                 return new byte[1];
             } else {

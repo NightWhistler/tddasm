@@ -8,13 +8,13 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProgramElementsBuilderTest {
+class ProgramBuilderTest {
 
     @Test
     public void testSingleInstruction() {
-        var elements = new ProgramElementsBuilder()
+        var elements = new ProgramBuilder()
                 .lda(value(0x03))
-                .build();
+                .buildElements();
 
         assertEquals(1, elements.size());
         assertEquals(new Operation(OpCode.LDA, new Operand.ByteValue((byte) 0x03)), elements.get(0));
@@ -22,13 +22,13 @@ class ProgramElementsBuilderTest {
 
     @Test
     public void testProgram() {
-        var elements = new ProgramElementsBuilder()
+        var elements = new ProgramBuilder()
                 .lda(value(0x03))
                 .label("some_label")
                 .iny()
                 .jsr("print_y")
                 .jmp(address(0x4567))
-                .build();
+                .buildElements();
 
         assertEquals(5, elements.size());
         assertEquals(List.of(
@@ -42,9 +42,9 @@ class ProgramElementsBuilderTest {
 
     @Test
     public void testText() {
-        var elements = new ProgramElementsBuilder()
+        var elements = new ProgramBuilder()
                 .text("ABC!")
-                .build();
+                .buildElements();
 
         var dataElement = (Data) elements.head();
         assertEquals(4, dataElement.length());
@@ -53,9 +53,9 @@ class ProgramElementsBuilderTest {
 
     @Test
     public void testPETSCII() {
-        var elements = new ProgramElementsBuilder()
+        var elements = new ProgramBuilder()
                 .screenCodes("abcABC!")
-                .build();
+                .buildElements();
 
         var dataElement = (Data) elements.head();
         assertEquals(7, dataElement.length());

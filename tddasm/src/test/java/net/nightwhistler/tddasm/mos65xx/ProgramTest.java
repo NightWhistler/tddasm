@@ -14,7 +14,7 @@ class ProgramTest {
 
     Program testProgram = new Program(
             Operand.address(0x8000),
-            new ProgramElementsBuilder()
+            new ProgramBuilder()
                     .label("load_data") //Address 0x8000
                     .lda(value(0x33))  //lda 2 bytes 0xA9 0x33
                     .cmp(address(0x3300))  //cmp 3 bytes  0xCD 0x00 0x33
@@ -23,7 +23,7 @@ class ProgramTest {
                     .inx() // 1 byte   // 0xE8
                     .jmp("load_data") //jmp 3 bytes 0x4C 0x00 0x80
                     .rts() //rts 1 byte 0x60
-                    .build()
+                    .buildElements()
 
     );
 
@@ -71,13 +71,13 @@ class ProgramTest {
     @Test
     public void relativeJump() {
         Program tiny = new Program(address(0x4000),
-                new ProgramElementsBuilder()
+                new ProgramBuilder()
                         .label("start")
                         .ldx(value(0x0A))
                         .dex()
                         .bne("start")
                         .rts()
-                        .build()
+                        .buildElements()
         );
         byte[] compiledProgram = tiny.compile();
         assertEquals(6, compiledProgram.length);

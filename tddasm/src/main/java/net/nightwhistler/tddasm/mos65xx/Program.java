@@ -6,8 +6,24 @@ import io.vavr.control.Option;
 
 import static io.vavr.control.Option.none;
 import static io.vavr.control.Option.some;
+import static net.nightwhistler.ByteUtils.bytes;
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 
 public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> elements) {
+
+    public Program(List<ProgramElement> elements) {
+        this(address(0xC000), elements);
+    }
+
+    public Program withBASICStarter() {
+        var basicElement = new Data(bytes(
+                0x0C,0x08,0x40,0x00,0x9E,0x20,0x32,0x30,0x36,0x32,0x00,0x00,0x00)
+        );
+
+        //Fix it into the BASIC space
+        return new Program(address(0x801), elements.prepend(basicElement));
+    }
+
     public Option<Operand.TwoByteAddress> resolveLabelAbsolute(String label) {
         int index = elements.indexOf(new Label(label));
         if ( index == -1 ) {
@@ -19,9 +35,8 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
     public Option<Byte> resolveLabelRelativeTo(String label, Operand.TwoByteAddress toAddress) {
         return resolveLabelAbsolute(label).map( a -> {
-            //The plus 2 is because the address is relative to the program counter _after_
-            //reading the relative jump instruction itself, which is 2 bytes long.
-            int diff = (a.toInt() - (toAddress.toInt()+2));
+
+            int diff = (a.toInt() - toAddress.toInt());
             if ( diff < -128 || diff > 128 ) {
                 throw new IllegalArgumentException("Address difference must be between -128 and 128");
             }
@@ -45,7 +60,9 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
             case AbsoluteAddressY -> resolveLabelAbsolute(labelOperand.label()).map(Operand.TwoByteAddress::yIndexed);
 
-            case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset)
+            //The plus 2 is because the address is relative to the program counter _after_
+            //reading the relative jump instruction itself, which is 2 bytes long.
+            case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset.plus(2))
                     .map(b -> new Operand.OneByteAddress(AddressingMode.Relative, b));
 
             default -> throw new IllegalStateException(

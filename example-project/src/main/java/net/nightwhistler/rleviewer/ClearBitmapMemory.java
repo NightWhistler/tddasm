@@ -2,7 +2,7 @@ package net.nightwhistler.rleviewer;
 
 import io.vavr.collection.List;
 import net.nightwhistler.tddasm.mos65xx.Operand;
-import net.nightwhistler.tddasm.mos65xx.ProgramElementsBuilder;
+import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.mos65xx.ProgramElement;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
@@ -67,7 +67,7 @@ public interface ClearBitmapMemory {
     static List<ProgramElement> fillMemory() {
 
         //This is a subroutine to clear 8000 memory addresses,
-        return new ProgramElementsBuilder().
+        return new ProgramBuilder().
                 label("fill_memory")
                 .ldy(value(0x00)) // Start Y register at 0
                 .label("outer_loop")
@@ -91,6 +91,6 @@ public interface ClearBitmapMemory {
                 .sta(BITMAP_DATA_END) //Our loops ends 1 address early
                 .rts()
 
-                .build();
+                .buildElements();
     }
 }

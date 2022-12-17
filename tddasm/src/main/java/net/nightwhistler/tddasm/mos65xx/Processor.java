@@ -3,6 +3,8 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+
 public class Processor {
     private byte accumulator;
     private byte xRegister;
@@ -12,7 +14,7 @@ public class Processor {
     private boolean negativeFlag;
     private boolean carryFlag;
 
-    private int programCounter;
+    private Operand.TwoByteAddress programCounter = address(0x00);
 
     //64kb of memory, C64 style.
     private static int MEMORY_SIZE = (int) Math.pow(2, 16);
@@ -54,10 +56,15 @@ public class Processor {
     }
 
     private int resolveLabel(Operand.LabelOperand labelOperand) {
-//        switch (labelOperand.addressingMode()) {
-//            case AbsoluteAddress ->
-//        }
-        return -1;
+        return  Option.of(currentProgram)
+                .flatMap(p -> p.resolveLabel(labelOperand, this.programCounter))
+                .map( addressOperand -> switch (addressOperand.addressingMode()) {
+                    case AbsoluteAddress -> ((Operand.TwoByteAddress) addressOperand).toInt();
+                    case AbsoluteAddressX -> ((Operand.TwoByteAddress) addressOperand).toInt() + xRegister;
+                    case AbsoluteAddressY -> ((Operand.TwoByteAddress) addressOperand).toInt() + yRegister;
+                    case Relative -> ((Operand.OneByteAddress) addressOperand).byteValue() + this.programCounter.toInt();
+                    default -> throw new UnsupportedOperationException(String.format("Can't use AddressingMode %s for labels"));
+                }) .getOrElseThrow(() -> new IllegalArgumentException("Can't resolve label " + labelOperand.label()));
     }
 
     private int location(Operand.AddressOperand addressOperand) {
@@ -157,12 +164,12 @@ public class Processor {
             return;
         }
 
-        List<ProgramElement> elements = this.currentProgram.elementsForLocation(Operand.address(this.programCounter));
+        List<ProgramElement> elements = this.currentProgram.elementsForLocation(this.programCounter);
         Option<Operation> op = elements.find(pe -> pe instanceof Operation)
                 .map(pe -> (Operation) pe);
 
         op.forEach(operation -> {
-            programCounter += operation.length();
+            programCounter = programCounter.plus(operation.length());
 
             //todo verify operation
 
@@ -195,6 +202,6 @@ public class Processor {
     }
 
     public void setProgramCounter(Operand.TwoByteAddress address) {
-        this.programCounter = address.toInt();
+        this.programCounter = address;
     }
 }
