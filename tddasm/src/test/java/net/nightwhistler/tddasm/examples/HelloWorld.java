@@ -1,5 +1,6 @@
 package net.nightwhistler.tddasm.examples;
 
+import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.util.ProgramWriter;
@@ -13,6 +14,7 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
+@CompileProgram("hello_world.prg")
 public class HelloWorld {
     public static Program main() {
 
