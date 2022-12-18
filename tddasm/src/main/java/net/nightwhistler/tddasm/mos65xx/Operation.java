@@ -4,9 +4,6 @@ import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Try;
 
-import static net.nightwhistler.ByteUtils.JAVA_BYTE_0_MASK;
-import static net.nightwhistler.ByteUtils.JAVA_BYTE_1_MASK;
-
 
 public record Operation(OpCode opCode, Operand operand) implements ProgramElement {
 
@@ -65,5 +62,8 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
 
     }
 
-
+    @Override
+    public String toString() {
+        return (opCode.toString() + " " + operand.toString()).trim();
+    }
 }

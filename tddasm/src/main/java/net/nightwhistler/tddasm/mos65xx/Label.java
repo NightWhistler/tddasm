@@ -10,4 +10,9 @@ public record Label(String name) implements ProgramElement {
         //Labels don't get translated to bytes
         return new byte[0];
     }
+
+    @Override
+    public String toString() {
+        return name + ":";
+    }
 }

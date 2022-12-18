@@ -5,7 +5,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+
+import static net.nightwhistler.tddasm.mos65xx.Label.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessorTest {
@@ -141,6 +147,39 @@ class ProcessorTest {
                 new ProcessorEvent.OperationPerformed(miniProg.startAddress().plus(2), new Operation(OpCode.STA, address(0x3344)))
         );
 
+
+    }
+
+    @Test
+    public void testBranching() {
+        ArrayList<ProcessorEvent> eventLog = new ArrayList<>();
+        ProcessorEvent.Listener eventListener = event -> eventLog.add(event);
+        var processor = new Processor();
+        processor.registerEventListener(eventListener);
+
+        //Very simple: load a value into the accumulator, then store it in memory.
+        Program miniProg = new ProgramBuilder()
+                .ldx(value(0x03))
+                .label("loop")
+                .lda(value(0x99))
+                .dex()
+                .bne("loop")
+                .iny()
+                .buildProgram();
+
+        processor.load(miniProg);
+        processor.setProgramCounter(miniProg.startAddress());
+
+        //Take 50 steps
+        for (int i = 0; i < 50; i++) {
+            processor.step();
+        }
+
+        var ldaEvents = eventLog.stream()
+                .filter(l -> (l instanceof ProcessorEvent.OperationPerformed o && o.operation().opCode() == OpCode.LDA));
+
+        //The central LDA operation should be performed 3 times
+        assertEquals(3, ldaEvents.toList().size());
 
     }
 

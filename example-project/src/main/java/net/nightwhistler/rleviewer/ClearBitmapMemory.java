@@ -68,11 +68,11 @@ public interface ClearBitmapMemory {
 
         //This is a subroutine to clear 8000 memory addresses,
         return new ProgramBuilder().
-                label("fill_memory")
+              label("fill_memory")
                 .ldy(value(0x00)) // Start Y register at 0
-                .label("outer_loop")
+              .label("outer_loop")
                 .lda(CLEAR_VALUE)
-                .label("inner_loop")
+              .label("inner_loop")
                 // We store in the low byte of the memory vector, but the instruction will also
                 // read the next (high) byte
                 .sta(MEM_VECTOR_LOW.indirectIndexedY())
@@ -85,7 +85,7 @@ public interface ClearBitmapMemory {
                 .beq("loop_end")
                 .lda(CLEAR_VALUE)
                 .jmp("inner_loop")
-                .label("loop_end")
+              .label("loop_end")
                 .sty(MEM_VECTOR_LOW) //Store the y register, so the vector points to the final address for verification
                 .lda(CLEAR_VALUE)
                 .sta(BITMAP_DATA_END) //Our loops ends 1 address early

@@ -7,6 +7,7 @@ import net.nightwhistler.tddasm.util.ProgramWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
@@ -58,7 +59,10 @@ public class HelloWorld {
             File output = new File("hello_world.prg");
             output.createNewFile();
             FileOutputStream fout = new FileOutputStream(output);
-            ProgramWriter.writeProgram(main().withBASICStarter(), fout);
+            var program = main().withBASICStarter();
+            program.printASM(new PrintWriter(System.out), true);
+
+            ProgramWriter.writeProgram(program, fout);
             fout.close();
         } catch (IOException e) {
             e.printStackTrace();

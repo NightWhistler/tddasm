@@ -30,6 +30,10 @@ public sealed interface Operand {
         public AddressingMode addressingMode() {
             return AddressingMode.Implied;
         }
+
+        public String toString() {
+            return "";
+        }
     }
 
     record ByteValue(byte value) implements Operand {
@@ -41,6 +45,11 @@ public sealed interface Operand {
         @Override
         public byte[] bytes() {
             return new byte[]{ value };
+        }
+
+        @Override
+        public String toString() {
+            return "#$" + Integer.toHexString(Byte.toUnsignedInt(value));
         }
     }
 
@@ -65,6 +74,19 @@ public sealed interface Operand {
         @Override
         public byte[] bytes() {
             return new byte[]{ byteValue };
+        }
+
+        @Override
+        public String toString() {
+            String base = "$" + Integer.toHexString(Byte.toUnsignedInt(byteValue));
+            return switch (addressingMode) {
+                case ZeroPageAddress, Relative -> base;
+                case ZeroPageAddressX -> base + ",X";
+                case ZeroPageAddressY -> base + ",Y";
+                case IndirectIndexedY -> String.format("(%s),Y", base);
+                case IndexedIndirectX -> String.format("(%s,X)", base);
+                default -> throw new IllegalArgumentException("Unsupported addressingmode " + addressingMode);
+            };
         }
     }
 
@@ -98,6 +120,17 @@ public sealed interface Operand {
             return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
         }
 
+        @Override
+        public String toString() {
+            String base = "$" + Integer.toHexString(toInt());
+            return switch (addressingMode) {
+                case AbsoluteAddress -> base;
+                case AbsoluteAddressX -> base + ",X";
+                case AbsoluteAddressY -> base + ",Y";
+                case AbsoluteIndirect -> String.format("(%s)", base);
+                default -> throw new IllegalArgumentException("Unsupported addressingmode " + addressingMode);
+            };
+        }
     }
 
     record LabelOperand(String label, AddressingMode addressingMode) implements AddressOperand {
@@ -120,6 +153,11 @@ public sealed interface Operand {
             } else {
                 return new byte[2];
             }
+        }
+
+        @Override
+        public String toString() {
+            return label;
         }
     }
 

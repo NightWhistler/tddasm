@@ -4,6 +4,8 @@ import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
+import java.io.PrintWriter;
+
 import static io.vavr.control.Option.none;
 import static io.vavr.control.Option.some;
 import static net.nightwhistler.ByteUtils.bytes;
@@ -62,7 +64,7 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
             //The plus 2 is because the address is relative to the program counter _after_
             //reading the relative jump instruction itself, which is 2 bytes long.
-            case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset.plus(2))
+            case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset)
                     .map(b -> new Operand.OneByteAddress(AddressingMode.Relative, b));
 
             default -> throw new IllegalStateException(
@@ -99,6 +101,29 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
                 .map(Tuple2::_2);
     }
 
+    public void printASM(PrintWriter printWriter, boolean includeAddresses) {
+        printWriter.println("*=" + startAddress);
+        var offsets = offsets();
+
+        for (var tuple: offsets) {
+            var address = tuple._1;
+            var element = tuple._2;
+
+            if (includeAddresses) {
+                printWriter.print(address + " ");
+            }
+
+            if (element instanceof Label l) {
+                printWriter.println(l);
+            } else {
+                printWriter.println("  " + element);
+            }
+        }
+
+        printWriter.flush();
+
+    }
+
     /**
      * Compiles the program, but doesn't add the startAddress in the first 2 bytes
      * @return
@@ -117,7 +142,9 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
             ProgramElement element = elements.get(i);
             if ( element instanceof Operation op && op.operand() instanceof Operand.LabelOperand lo) {
                 OpCode opCode = op.opCode();
-                var resolvedAddress = resolveLabel(lo, absoluteOffset);
+
+                //We resolve the label with an offset of +2, which is the length of the instruction itself
+                var resolvedAddress = resolveLabel(lo, absoluteOffset.plus(2));
                 elementData = resolvedAddress
                         .map(a -> new Operation(opCode, a).bytes())
                         .getOrElseThrow(

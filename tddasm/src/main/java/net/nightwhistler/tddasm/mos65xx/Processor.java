@@ -36,23 +36,22 @@ public class Processor {
      * @param operation
      */
     public void performOperation(Operation operation) {
-       byte value = value(operation.operand());
 
         switch (operation.opCode()) {
             //Load Acumulator
-            case LDA -> setFlag(accumulator = value);
+            case LDA -> setFlag(accumulator = value(operation.operand()));
 
             //Store Accumulator
             case STA -> pokeValue(location((Operand.AddressOperand) operation.operand()), accumulator);
 
             //Load X register
-            case LDX -> setFlag(xRegister = value);
+            case LDX -> setFlag(xRegister = value(operation.operand()));
 
             //Store X register
             case STX -> pokeValue(location((Operand.AddressOperand) operation.operand()), xRegister);
 
             //Load y register
-            case LDY -> setFlag(yRegister = value);
+            case LDY -> setFlag(yRegister = value(operation.operand()));
 
             //Store y register
             case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
@@ -65,6 +64,14 @@ public class Processor {
             case BNE -> jumpIf(operation.operand(), !zeroFlag);
 
             case BEQ -> jumpIf(operation.operand(), zeroFlag);
+
+            case INX -> setFlag(++xRegister);
+
+            case DEX -> setFlag(--xRegister);
+
+            case INY -> setFlag(++yRegister);
+
+            case DEY -> setFlag(--yRegister);
 
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
@@ -79,12 +86,14 @@ public class Processor {
             };
 
             this.programCounter = address(jumpTo);
+            fireEvent(new ProcessorEvent.JumpedTo(programCounter));
         }
     }
 
-    private void setFlag(byte result) {
-        this.zeroFlag = result == 0;
-        this.negativeFlag = result < 0;
+
+    private void setFlag(byte newValue) {
+        this.zeroFlag = newValue == 0;
+        this.negativeFlag = newValue < 0;
     }
 
     private int resolveLabel(Operand.LabelOperand labelOperand) {
@@ -217,6 +226,8 @@ public class Processor {
             //todo verify operation?
 
             performOperation(operation);
+
+            fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag));
             fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
         });
 
