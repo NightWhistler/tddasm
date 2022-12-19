@@ -16,6 +16,8 @@ public class Processor {
     private boolean negativeFlag;
     private boolean carryFlag;
 
+    private int stackPointer = 0xF3;
+
     private Operand.TwoByteAddress programCounter = address(0x00);
 
     //64kb of memory, C64 style.
@@ -59,7 +61,7 @@ public class Processor {
             //Clear carry flag
             case CLC -> carryFlag = false;
 
-            case JMP -> jumpIf(operation.operand(), true);
+            case JMP -> jump(operation.operand());
 
             case BNE -> jumpIf(operation.operand(), !zeroFlag);
 
@@ -73,8 +75,28 @@ public class Processor {
 
             case DEY -> setFlag(--yRegister);
 
+            case JSR -> doJsr(operation.operand());
+
+            case RTS -> doRts();
+
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
+    }
+
+    private void doJsr(Operand operand) {
+        pushStack(programCounter.highByte());
+        pushStack(programCounter.lowByte());
+        jump(operand);
+    }
+
+    private void doRts() {
+        byte lowByte = popStack();
+        byte highByte = popStack();
+        this.programCounter = new Operand.TwoByteAddress(lowByte, highByte);
+    }
+
+    private void jump(Operand operand) {
+        jumpIf(operand, true);
     }
 
     private void jumpIf(Operand operand, boolean condition) {
@@ -184,6 +206,16 @@ public class Processor {
     public byte peekValue(int location) {
         int offset = (location & 0x00FF);
         return memory[offset];
+    }
+
+    public void pushStack(byte value) {
+        memory[stackPointer] = value;
+        stackPointer--;
+    }
+
+    public byte popStack() {
+        stackPointer++;
+        return memory[stackPointer];
     }
 
     /**

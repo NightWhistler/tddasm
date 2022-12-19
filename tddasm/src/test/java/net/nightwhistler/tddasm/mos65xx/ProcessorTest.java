@@ -6,8 +6,15 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static net.nightwhistler.tddasm.mos65xx.Label.label;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JSR;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.LDX;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.LDY;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
@@ -28,7 +35,7 @@ class ProcessorTest {
      */
     @Test
     public void testLDAValue() {
-        var operation = operation(OpCode.LDA, value(0x03));
+        var operation = operation(LDA, value(0x03));
         var processor = new Processor();
 
         processor.performOperation(operation);
@@ -37,7 +44,7 @@ class ProcessorTest {
 
     @Test
     public void testLDXValue() {
-        var operation = operation(OpCode.LDX, value(0x03));
+        var operation = operation(LDX, value(0x03));
         var processor = new Processor();
 
         processor.performOperation(operation);
@@ -46,7 +53,7 @@ class ProcessorTest {
 
     @Test
     public void testLDYValue() {
-        var operation = operation(OpCode.LDY, value(0x03));
+        var operation = operation(LDY, value(0x03));
         var processor = new Processor();
 
         processor.performOperation(operation);
@@ -56,7 +63,7 @@ class ProcessorTest {
     @Test
     public void testSTAValue() {
         var processor = new Processor();
-        var ldaOperation = operation(OpCode.LDA, value(0x03));
+        var ldaOperation = operation(LDA, value(0x03));
         var staOperation = operation(OpCode.STA, address(0x0C69));
 
         processor.performOperation(ldaOperation);
@@ -70,7 +77,7 @@ class ProcessorTest {
     public void testLDAAddress() {
 
         //Load the accumulator from $4030
-        var staOperation = operation(OpCode.LDA, address(0x4030));
+        var staOperation = operation(LDA, address(0x4030));
         var processor = new Processor();
 
         //Assure the address was 0
@@ -85,7 +92,7 @@ class ProcessorTest {
 
     @Test
     public void testZeroFlag() {
-        var staOperation = operation(OpCode.LDY, value(0x03));
+        var staOperation = operation(LDY, value(0x03));
         var processor = new Processor();
 
         processor.performOperation(staOperation);
@@ -94,7 +101,7 @@ class ProcessorTest {
         assertFalse(processor.isZeroFlagSet());
 
         //Read from an empty address
-        processor.performOperation(operation(OpCode.LDY, address(0x1122)));
+        processor.performOperation(operation(LDY, address(0x1122)));
         assertEquals((byte) 0x00, processor.getYRegisterValue());
         assertTrue(processor.isZeroFlagSet());
     }
@@ -131,7 +138,7 @@ class ProcessorTest {
 
         //LDA
         verify(mockEventListener).receiveEvent(
-                new ProcessorEvent.OperationPerformed(miniProg.startAddress(), new Operation(OpCode.LDA, value(0x03)))
+                new ProcessorEvent.OperationPerformed(miniProg.startAddress(), new Operation(LDA, value(0x03)))
         );
 
         //Perform the next operation
@@ -176,11 +183,54 @@ class ProcessorTest {
         }
 
         var ldaEvents = eventLog.stream()
-                .filter(l -> (l instanceof ProcessorEvent.OperationPerformed o && o.operation().opCode() == OpCode.LDA));
+                .filter(l -> (l instanceof ProcessorEvent.OperationPerformed o && o.operation().opCode() == LDA));
 
         //The central LDA operation should be performed 3 times
         assertEquals(3, ldaEvents.toList().size());
 
+    }
+
+    @Test
+    public void testPushPop() {
+        Processor processor = new Processor();
+        processor.pushStack((byte) 0x03);
+        processor.pushStack((byte) 0x05);
+
+        assertEquals((byte) 0x05, processor.popStack());
+        assertEquals((byte) 0x03, processor.popStack());
+    }
+
+    @Test
+    public void testSubroutine() {
+        Processor processor = new Processor();
+        java.util.List<OpCode> events = new ArrayList<>();
+
+        processor.registerEventListener(event -> {
+            if (event instanceof ProcessorEvent.OperationPerformed op) {
+                events.add(op.operation().opCode());
+            }
+        });
+
+        Program program = new ProgramBuilder()
+                .jmp("main")
+                .label("sub_routine")
+                .lda(value(0x33))
+                .rts()
+                .label("main")
+                .ldx(value(0x22))
+                .jsr("sub_routine")
+                .ldy(value(0x88))
+                .buildProgram();
+
+        processor.load(program);
+        processor.setProgramCounter(program.startAddress());
+
+        for ( int i=0; i < 6; i++) {
+            processor.step();
+        }
+
+        //Check that the opcodes were executed in the correct order
+        assertEquals(java.util.List.of(JMP, LDX, JSR, LDA, RTS, LDY), events);
     }
 
 }
