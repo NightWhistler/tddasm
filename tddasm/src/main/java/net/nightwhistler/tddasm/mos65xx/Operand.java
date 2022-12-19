@@ -120,6 +120,10 @@ public sealed interface Operand {
             return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
         }
 
+        public TwoByteAddress increment() {
+            return plus(1);
+        }
+
         @Override
         public String toString() {
             String base = "$" + Integer.toHexString(toInt());

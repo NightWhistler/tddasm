@@ -13,7 +13,9 @@ public sealed interface ProcessorEvent {
             byte accumulator,
             boolean zeroFlag,
             boolean negativeFlag,
-            boolean carryFlag) implements ProcessorEvent {}
+            boolean carryFlag,
+            boolean breakFlag
+            ) implements ProcessorEvent {}
 
     interface Listener {
         void receiveEvent(ProcessorEvent processorEvent);

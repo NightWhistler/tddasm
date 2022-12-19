@@ -31,9 +31,9 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
     }
 
     public byte[] bytes() {
-        byte firstByte = opCode.codeForAddressingMode(addressingMode()).getOrElseThrow(
+        byte firstByte = opCode.findByAddressingMode(addressingMode()).getOrElseThrow(
                 () -> new IllegalArgumentException("Unsupported AddressingMode: " + addressingMode() + " for OpCode " + opCode)
-        );
+        ).code();
 
         byte[] value = operand.bytes();
 

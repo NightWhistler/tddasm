@@ -3,8 +3,6 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 
-import java.util.function.Consumer;
-
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 
 public class Processor {
@@ -15,6 +13,8 @@ public class Processor {
     private boolean zeroFlag;
     private boolean negativeFlag;
     private boolean carryFlag;
+
+    private boolean breakFlag;
 
     private int stackPointer = 0xF3;
 
@@ -38,6 +38,8 @@ public class Processor {
      * @param operation
      */
     public void performOperation(Operation operation) {
+
+        this.breakFlag = false;
 
         switch (operation.opCode()) {
             //Load Acumulator
@@ -79,6 +81,8 @@ public class Processor {
 
             case RTS -> doRts();
 
+            case BRK -> this.breakFlag = true;
+
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
     }
@@ -111,7 +115,6 @@ public class Processor {
             fireEvent(new ProcessorEvent.JumpedTo(programCounter));
         }
     }
-
 
     private void setFlag(byte newValue) {
         this.zeroFlag = newValue == 0;
@@ -156,6 +159,8 @@ public class Processor {
 
                         yield toInt(lowByte, highByte);
                     }
+
+                    case Relative -> programCounter.toInt() + byteValue;
 
                     default -> throw new IllegalArgumentException(
                             String.format("Can't use %s for OneByteAddress", oneByteAddress.addressingMode())
@@ -242,28 +247,43 @@ public class Processor {
 
      */
 
-    public void step() {
-        if ( this.currentProgram == null ) {
-            return;
+    public void run(Operand.TwoByteAddress address) {
+        setProgramCounter(address);
+        while (! breakFlag) {
+            step();
         }
-
-        List<ProgramElement> elements = this.currentProgram.elementsForLocation(this.programCounter);
-        Option<Operation> op = elements.find(pe -> pe instanceof Operation)
-                .map(pe -> (Operation) pe);
-
-        op.forEach(operation -> {
-            var programCounterBefore = programCounter;
-            programCounter = programCounter.plus(operation.length());
-
-            //todo verify operation?
-
-            performOperation(operation);
-
-            fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag));
-            fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
-        });
-
     }
+
+    public void step() {
+        var programCounterBefore = programCounter;
+
+        byte opCode = readByte();
+        OpCode.AdressingModeMapping mapping = OpCode.findByByteValue(opCode)
+                .getOrElseThrow(() ->
+                        new IllegalStateException("Unmappable instruction: " + Integer.toHexString(Byte.toUnsignedInt(opCode)))
+                );
+
+        int bytesToRead = mapping.addressingMode().size();
+        byte[] data = switch (bytesToRead) {
+            case 0 -> new byte[0];
+            case 1 -> new byte[] { readByte() };
+            case 2 -> new byte[] { readByte(), readByte() };
+            default -> throw new IllegalStateException("Illegal instruction size " + bytesToRead);
+        };
+
+        Operation operation = new Operation(mapping.opCode(), mapping.addressingMode().toOperand(data));
+        performOperation(operation);
+
+        fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag, breakFlag));
+        fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
+    }
+
+    private byte readByte() {
+        byte value = memory[this.programCounter.toInt()];
+        this.programCounter = this.programCounter.increment();
+        return value;
+    }
+
     public byte getAccumulatorValue() {
         return accumulator;
     }
@@ -286,6 +306,10 @@ public class Processor {
 
     public boolean isZeroFlagSet() {
         return zeroFlag;
+    }
+
+    public boolean isBreakFlagSet() {
+        return breakFlag;
     }
 
     public void setProgramCounter(Operand.TwoByteAddress address) {

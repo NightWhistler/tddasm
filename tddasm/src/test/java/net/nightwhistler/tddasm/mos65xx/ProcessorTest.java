@@ -6,9 +6,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import static net.nightwhistler.tddasm.mos65xx.Label.label;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.BRK;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JSR;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
@@ -16,7 +15,6 @@ import static net.nightwhistler.tddasm.mos65xx.OpCode.LDX;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDY;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
-import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,8 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessorTest {
@@ -175,12 +171,9 @@ class ProcessorTest {
                 .buildProgram();
 
         processor.load(miniProg);
-        processor.setProgramCounter(miniProg.startAddress());
 
-        //Take 50 steps
-        for (int i = 0; i < 50; i++) {
-            processor.step();
-        }
+        //Run until we encounter a BRK (code 0, so empty memory)
+        processor.run(miniProg.startAddress());
 
         var ldaEvents = eventLog.stream()
                 .filter(l -> (l instanceof ProcessorEvent.OperationPerformed o && o.operation().opCode() == LDA));
@@ -198,6 +191,24 @@ class ProcessorTest {
 
         assertEquals((byte) 0x05, processor.popStack());
         assertEquals((byte) 0x03, processor.popStack());
+    }
+
+    @Test
+    public void testNoProgramLoaded() {
+        Processor processor = new Processor();
+        java.util.List<OpCode> events = new ArrayList<>();
+
+        processor.registerEventListener(event -> {
+            if (event instanceof ProcessorEvent.OperationPerformed op) {
+                events.add(op.operation().opCode());
+            }
+        });
+
+        processor.run(address(0xC000));
+
+        //The processor will read 1 BRK command from memory (bytevalue 0x00)
+        //and then stop.
+        assertEquals(java.util.List.of(BRK), events);
     }
 
     @Test
@@ -223,14 +234,10 @@ class ProcessorTest {
                 .buildProgram();
 
         processor.load(program);
-        processor.setProgramCounter(program.startAddress());
-
-        for ( int i=0; i < 6; i++) {
-            processor.step();
-        }
+        processor.run(program.startAddress());
 
         //Check that the opcodes were executed in the correct order
-        assertEquals(java.util.List.of(JMP, LDX, JSR, LDA, RTS, LDY), events);
+        assertEquals(java.util.List.of(JMP, LDX, JSR, LDA, RTS, LDY, BRK), events);
     }
 
 }
