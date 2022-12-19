@@ -31,7 +31,12 @@ public enum OpCode {
     ASL,
     BCC,
     BCS,
-    BEQ,
+    BEQ {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0xF0));
+        }
+    },
     BIT,
     BMI,
     BNE {
@@ -77,7 +82,16 @@ public enum OpCode {
             );
         }
     },
-    CPY,
+    CPY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AddressingMode.Value, 0xC0),
+                    mode(this, AbsoluteAddress, 0xCC),
+                    mode(this, ZeroPageAddress, 0xC4)
+                );
+        }
+    },
     DCP,
     DEC,
     DEX {

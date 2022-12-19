@@ -57,6 +57,12 @@ public class Processor {
             //Load y register
             case LDY -> setFlag(yRegister = value(operation.operand()));
 
+            case CPY -> setFlag((byte) (yRegister - value(operation.operand())));
+
+            case CPX -> setFlag((byte) (xRegister - value(operation.operand())));
+
+            case CMP -> setFlag((byte) (accumulator - value(operation.operand())));
+
             //Store y register
             case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
 
