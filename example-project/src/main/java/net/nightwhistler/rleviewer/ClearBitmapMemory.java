@@ -1,6 +1,7 @@
 package net.nightwhistler.rleviewer;
 
 import io.vavr.collection.List;
+import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.mos65xx.ProgramElement;
@@ -9,16 +10,18 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
-public interface ClearBitmapMemory {
-    int VIC_REG_1=0xD011;
-    int VIC_REG_2=0xD016;
-    int VIC_BITMAP_VECTOR=0xD018;
-    int BITMAP_DATA_START=0x2000;
-    Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
-    Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
-    Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
-    int KERNAL_CLEAR_SCR=0x544;
-    Operand.ByteValue CLEAR_VALUE=value(0x0F);
+@CompileProgram("clr_bitmap.prg")
+public class ClearBitmapMemory {
+
+    private static final int VIC_REG_1=0xD011;
+    private static final int VIC_REG_2=0xD016;
+    private static final int VIC_BITMAP_VECTOR=0xD018;
+    private static final int BITMAP_DATA_START=0x2000;
+    private static final Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
+    private static final Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
+    private static final Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
+    private static final int KERNAL_CLEAR_SCR=0x544;
+    private static final Operand.ByteValue CLEAR_VALUE=value(0x0F);
 
 
     /**
