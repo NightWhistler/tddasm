@@ -8,18 +8,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 
 import static net.nightwhistler.tddasm.mos65xx.OpCode.BRK;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.INY;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JSR;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDX;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDY;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
+import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -60,7 +65,7 @@ class ProcessorTest {
     public void testSTAValue() {
         var processor = new Processor();
         var ldaOperation = operation(LDA, value(0x03));
-        var staOperation = operation(OpCode.STA, address(0x0C69));
+        var staOperation = operation(STA, address(0x0C69));
 
         processor.performOperation(ldaOperation);
         processor.performOperation(staOperation);
@@ -104,7 +109,7 @@ class ProcessorTest {
 
     @Test
     public void testMemoryChangedEvents() {
-        ProcessorEvent.Listener mockEventListener = Mockito.mock(ProcessorEvent.Listener.class);
+        ProcessorEvent.Listener mockEventListener = mock(ProcessorEvent.Listener.class);
         var processor = new Processor();
         processor.registerEventListener(mockEventListener);
 
@@ -116,7 +121,7 @@ class ProcessorTest {
 
     @Test
     public void testOperationPerformedEvent() {
-        ProcessorEvent.Listener mockEventListener = Mockito.mock(ProcessorEvent.Listener.class);
+        ProcessorEvent.Listener mockEventListener = mock(ProcessorEvent.Listener.class);
         var processor = new Processor();
         processor.registerEventListener(mockEventListener);
 
@@ -147,7 +152,7 @@ class ProcessorTest {
 
         //STA operation performed
         verify(mockEventListener).receiveEvent(
-                new ProcessorEvent.OperationPerformed(miniProg.startAddress().plus(2), new Operation(OpCode.STA, address(0x3344)))
+                new ProcessorEvent.OperationPerformed(miniProg.startAddress().plus(2), new Operation(STA, address(0x3344)))
         );
 
 
@@ -238,6 +243,39 @@ class ProcessorTest {
 
         //Check that the opcodes were executed in the correct order
         assertEquals(java.util.List.of(JMP, LDX, JSR, LDA, RTS, LDY, BRK), events);
+    }
+
+    @Test
+    public void testIndexedIndirect() {
+        Processor processor = new Processor();
+        processor.pokeValue(0xFB, (byte) 0x00);
+        processor.pokeValue(0xFC, (byte) 0x20);
+        ProcessorEvent.Listener mockListener = mock(ProcessorEvent.Listener.class);
+        processor.registerEventListener(mockListener);
+
+        processor.performOperation(new Operation(LDA, value(3)));
+//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+//
+//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2000), (byte) 0, (byte) 3));
+//
+//        processor.performOperation(new Operation(LDY, value(0x10)));
+//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2010), (byte) 0, (byte) 3));
+
+//        processor.performOperation(new Operation(LDY, value(0xFA)));
+//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FA), (byte) 0, (byte) 3));
+
+//        processor.performOperation(new Operation(INY, noValue()));
+//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FB), (byte) 0, (byte) 3));
+
+        processor.performOperation(new Operation(LDY, value(0xFA)));
+        processor.performOperation(new Operation(INY, noValue()));
+        processor.performOperation(new Operation(INY, noValue()));
+        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FC), (byte) 0, (byte) 3));
+
     }
 
 }

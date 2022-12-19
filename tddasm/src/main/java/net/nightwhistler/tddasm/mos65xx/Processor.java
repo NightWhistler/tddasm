@@ -2,7 +2,10 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
 import io.vavr.control.Option;
+import net.nightwhistler.ByteUtils;
 
+import static java.lang.Byte.toUnsignedInt;
+import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 
 public class Processor {
@@ -27,6 +30,8 @@ public class Processor {
     private Program currentProgram = null;
 
     private List<ProcessorEvent.Listener> listeners = List.empty();
+
+    private int operationCount = 0;
 
     /**
      * Tells the Processor to process an operation.
@@ -87,10 +92,21 @@ public class Processor {
 
             case RTS -> doRts();
 
+            case INC -> doInc((Operand.AddressOperand) operation.operand());
+
             case BRK -> this.breakFlag = true;
 
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
+
+        operationCount++;
+    }
+
+    private void doInc(Operand.AddressOperand operand) {
+        int location = location(operand);
+        byte value = peekValue(location);
+        setFlag(++value);
+        pokeValue(location, value);
     }
 
     private void doJsr(Operand operand) {
@@ -118,7 +134,22 @@ public class Processor {
             };
 
             this.programCounter = address(jumpTo);
-            fireEvent(new ProcessorEvent.JumpedTo(programCounter));
+            fireEvent(new ProcessorEvent.JumpedTo(programCounter, findLabelsForLocation(programCounter)));
+        }
+    }
+
+    private List<Label> findLabelsForLocation(Operand.TwoByteAddress address) {
+        if (this.currentProgram == null) {
+            return List.empty();
+        } else {
+            return currentProgram.elementsForLocation(address)
+                    .flatMap(element -> {
+                        if (element instanceof Label l) {
+                            return List.of(l);
+                        } else {
+                            return List.empty();
+                        }
+                    });
         }
     }
 
@@ -132,8 +163,8 @@ public class Processor {
                 .flatMap(p -> p.resolveLabel(labelOperand, this.programCounter))
                 .map( addressOperand -> switch (addressOperand.addressingMode()) {
                     case AbsoluteAddress -> ((Operand.TwoByteAddress) addressOperand).toInt();
-                    case AbsoluteAddressX -> ((Operand.TwoByteAddress) addressOperand).toInt() + xRegister;
-                    case AbsoluteAddressY -> ((Operand.TwoByteAddress) addressOperand).toInt() + yRegister;
+                    case AbsoluteAddressX -> ((Operand.TwoByteAddress) addressOperand).toInt() + toUnsignedInt(xRegister);
+                    case AbsoluteAddressY -> ((Operand.TwoByteAddress) addressOperand).toInt() + toUnsignedInt(yRegister);
                     case Relative -> ((Operand.OneByteAddress) addressOperand).byteValue() + this.programCounter.toInt();
                     default -> throw new UnsupportedOperationException(String.format("Can't use AddressingMode %s for labels"));
                 }) .getOrElseThrow(() -> new IllegalArgumentException("Can't resolve label " + labelOperand.label()));
@@ -145,25 +176,28 @@ public class Processor {
             case Operand.OneByteAddress oneByteAddress -> {
 
                 byte byteValue = oneByteAddress.byteValue();
+                int unsignedValue = toUnsignedInt(byteValue);
 
                 yield switch (oneByteAddress.addressingMode()) {
-                    case ZeroPageAddress -> byteValue;
-                    case ZeroPageAddressX -> byteValue + xRegister;
-                    case ZeroPageAddressY -> byteValue + yRegister;
+                    case ZeroPageAddress -> unsignedValue;
+                    case ZeroPageAddressX -> unsignedValue + toUnsignedInt(xRegister);
+                    case ZeroPageAddressY -> unsignedValue + toUnsignedInt(yRegister);
                     case IndirectIndexedY -> {
                         //Must be 0-paged
-                        int address = byteValue;
+                        int address = unsignedValue;
                         var lowByte = peekValue(address);
                         var highByte = peekValue(address+1);
 
-                        yield toInt(lowByte, highByte) + yRegister;
+                        int calculatedOffset = littleEndianBytesToInt(lowByte, highByte);
+                        int unsignedY = toUnsignedInt(yRegister);
+                        yield calculatedOffset + unsignedY;
                     }
                     case IndexedIndirectX -> {
-                        int address = byteValue;
-                        var lowByte = peekValue(address + xRegister);
-                        var highByte = peekValue(address+ xRegister +1);
+                        int address = unsignedValue;
+                        var lowByte = peekValue(address + toUnsignedInt(xRegister));
+                        var highByte = peekValue(address+ toUnsignedInt(xRegister) +1);
 
-                        yield toInt(lowByte, highByte);
+                        yield littleEndianBytesToInt(lowByte, highByte);
                     }
 
                     case Relative -> programCounter.toInt() + byteValue;
@@ -174,11 +208,11 @@ public class Processor {
                 };
             }
             case Operand.TwoByteAddress twoByteAddress -> {
-                var baseAddress = toInt(twoByteAddress.lowByte(), twoByteAddress.highByte());
+                var baseAddress = littleEndianBytesToInt(twoByteAddress.lowByte(), twoByteAddress.highByte());
                 yield switch (twoByteAddress.addressingMode()) {
                     case AbsoluteAddress -> baseAddress;
-                    case AbsoluteAddressX -> baseAddress + xRegister;
-                    case AbsoluteAddressY -> baseAddress + yRegister;
+                    case AbsoluteAddressX -> baseAddress + toUnsignedInt(xRegister);
+                    case AbsoluteAddressY -> baseAddress + toUnsignedInt(yRegister);
                     default -> throw new IllegalArgumentException(
                             String.format("Can't use %s for TwoByteAddress", twoByteAddress.addressingMode())
                     );
@@ -203,19 +237,15 @@ public class Processor {
         };
     }
 
-    private int toInt(byte lowByte, byte highByte) {
-        return lowByte + (highByte << 8);
-    }
-
     public void pokeValue(int location, byte value) {
-        int offset = (location & 0x00FF);
+        int offset = (location & 0xFFFF);
         byte oldValue = memory[offset];
         memory[offset] = value;
         fireEvent(new ProcessorEvent.MemoryLocationChanged(address(location), oldValue, value));
     }
 
     public byte peekValue(int location) {
-        int offset = (location & 0x00FF);
+        int offset = (location & 0xFFFF);
         return memory[offset];
     }
 
@@ -253,11 +283,16 @@ public class Processor {
 
      */
 
-    public void run(Operand.TwoByteAddress address) {
+    public void run(Operand.TwoByteAddress address, int maxOperationCount) {
         setProgramCounter(address);
-        while (! breakFlag) {
+        while (! breakFlag && operationCount <= maxOperationCount) {
             step();
         }
+    }
+
+
+    public void run(Operand.TwoByteAddress address) {
+        run(address, Integer.MAX_VALUE);
     }
 
     public void step() {
@@ -266,7 +301,7 @@ public class Processor {
         byte opCode = readByte();
         OpCode.AdressingModeMapping mapping = OpCode.findByByteValue(opCode)
                 .getOrElseThrow(() ->
-                        new IllegalStateException("Unmappable instruction: " + Integer.toHexString(Byte.toUnsignedInt(opCode)))
+                        new IllegalStateException("Unmappable instruction: " + Integer.toHexString(toUnsignedInt(opCode)))
                 );
 
         int bytesToRead = mapping.addressingMode().size();

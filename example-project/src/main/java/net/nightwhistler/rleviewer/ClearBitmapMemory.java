@@ -13,7 +13,7 @@ public interface ClearBitmapMemory {
     int VIC_REG_1=0xD011;
     int VIC_REG_2=0xD016;
     int VIC_BITMAP_VECTOR=0xD018;
-    int BITMAP_DATA_START=0x2000;
+    Operand.TwoByteAddress BITMAP_DATA_START=address(0x2000);
     Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
     Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
     Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
@@ -64,33 +64,33 @@ public interface ClearBitmapMemory {
      *
     */
 
-    static List<ProgramElement> fillMemory() {
+    static ProgramBuilder fillMemory() {
 
         //This is a subroutine to clear 8000 memory addresses,
         return new ProgramBuilder().
               label("fill_memory")
+                .ldx(value(BITMAP_DATA_START.lowByte()))
+                .stx(MEM_VECTOR_LOW)
+                .ldx(value(BITMAP_DATA_START.highByte()))
+                .stx(MEM_VECTOR_HIGH)
                 .ldy(value(0x00)) // Start Y register at 0
-              .label("outer_loop")
                 .lda(CLEAR_VALUE)
               .label("inner_loop")
                 // We store in the low byte of the memory vector, but the instruction will also
                 // read the next (high) byte
                 .sta(MEM_VECTOR_LOW.indirectIndexedY())
                 .iny() //We increase y, until it rolls over to 0
-                .beq("loop_end") //If the roll-over occurred, jump out of the loop
-                .cpy(value(BITMAP_DATA_END.lowByte()))
+                .bne("inner_loop") //As long as we haven't rolled over, loop
+                .inc(MEM_VECTOR_HIGH)
+                .ldx(MEM_VECTOR_HIGH)
+                .cpx(value(BITMAP_DATA_END.highByte()))
                 .bne("inner_loop")
-                .lda(value(BITMAP_DATA_END.highByte())) //Check against high byte of bitmap vec
-                .cmp(MEM_VECTOR_HIGH)
-                .beq("loop_end")
-                .lda(CLEAR_VALUE)
-                .jmp("inner_loop")
-              .label("loop_end")
-                .sty(MEM_VECTOR_LOW) //Store the y register, so the vector points to the final address for verification
-                .lda(CLEAR_VALUE)
-                .sta(BITMAP_DATA_END) //Our loops ends 1 address early
-                .rts()
-
-                .buildElements();
+              .label("last_loop")
+                .sta(MEM_VECTOR_LOW.indirectIndexedY())
+                .iny()
+                .cpy(value(BITMAP_DATA_END.lowByte())) //This time we don't increase until 0, but the last address
+                .bne("last_loop") //As long as we haven't rolled over, loop
+                .sta(MEM_VECTOR_LOW.indirectIndexedY()) //Last item
+                .rts();
     }
 }

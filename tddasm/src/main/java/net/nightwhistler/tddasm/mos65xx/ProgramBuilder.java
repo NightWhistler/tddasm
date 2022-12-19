@@ -65,6 +65,9 @@ public class ProgramBuilder {
         return withOperation(OpCode.LDX, operand);
     }
 
+    public ProgramBuilder stx(Operand operand) {
+        return withOperation(OpCode.STX, operand);
+    }
     public ProgramBuilder dex() {
         return withOperation(OpCode.DEX, Operand.noValue());
     }
@@ -115,6 +118,10 @@ public class ProgramBuilder {
 
     public ProgramBuilder bne(String label) {
         return withOperation(OpCode.BNE, new Operand.LabelOperand(label, Relative));
+    }
+
+    public ProgramBuilder inc(Operand operand) {
+        return withOperation(OpCode.INC, operand);
     }
 
     public ProgramBuilder cpx(Operand operand) {

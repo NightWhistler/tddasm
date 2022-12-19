@@ -1,6 +1,6 @@
 package net.nightwhistler.tddasm.mos65xx;
 
-import io.vavr.Tuple2;
+import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -102,7 +102,17 @@ public enum OpCode {
     },
     DEY,
     EOR,
-    INC,
+    INC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AbsoluteAddress, 0xEE),
+                    mode(this,AbsoluteAddressX, 0xFE),
+                    mode(this,ZeroPageAddress, 0xE6),
+                    mode(this,ZeroPageAddressX, 0xF6)
+            );
+        }
+    },
     INX {
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(mode(this,Implied, 0xE8));
@@ -249,10 +259,18 @@ public enum OpCode {
                 .find(m -> m.addressingMode == addressingMode);
     }
 
+    private static java.util.HashMap<Byte, OpCode.AdressingModeMapping> mappings = null;
+
     public static Option<AdressingModeMapping> findByByteValue(byte value) {
-        return List.of(values()).flatMap(opCode ->
-                Try.of(() -> opCode.addressingModeMappings()).getOrElse(List.empty()))
-                .find(m -> m.code == value);
+        if (mappings == null) {
+            mappings = new java.util.HashMap<>();
+            List.of(values()).flatMap(opCode ->
+                Try.of(() -> opCode.addressingModeMappings()).getOrElse(List.empty())).forEach( m ->
+                    mappings.put(m.code, m)
+            );
+        }
+
+        return Option.of(mappings.get(value));
     }
 
     public boolean supportAddressingMode(AddressingMode addressingMode) {
