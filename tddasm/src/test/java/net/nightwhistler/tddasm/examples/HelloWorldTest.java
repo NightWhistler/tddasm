@@ -1,27 +1,27 @@
 package net.nightwhistler.tddasm.examples;
 
 import net.nightwhistler.tddasm.mos65xx.Processor;
-import org.junit.jupiter.api.Assertions;
+import net.nightwhistler.tddasm.mos65xx.Program;
+import net.nightwhistler.tddasm.screen.TextModeScreen;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HelloWorldTest {
 
     @Test
-    public void testHelloWorldCompiles() {
-        try {
-            HelloWorld.main().compile();
-        } catch (Exception e) {
-            fail("Should compile without error", e);
-        }
-    }
-
-//    @Test
-    public void testShouldRun() {
+    public void shouldDisplayHelloWorld() {
         Processor processor = new Processor();
-        processor.load(HelloWorld.main());
+        TextModeScreen screen = new TextModeScreen(processor);
+        Program helloWorld = HelloWorld.main();
+        processor.load(helloWorld);
 
-        fail("Unfinished test");
+        processor.run(helloWorld.startAddress());
+        assertEquals("             Hello world!               ",
+                screen.getLineAsString(12));
+
+        assertEquals("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+                screen.getLineAsString(11));
     }
+
 }

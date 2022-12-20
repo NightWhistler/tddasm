@@ -19,7 +19,7 @@ public sealed interface ProcessorEvent {
             boolean breakFlag
             ) implements ProcessorEvent {}
 
-    interface Listener {
-        void receiveEvent(ProcessorEvent processorEvent);
+    interface Listener<E extends ProcessorEvent> {
+        void receiveEvent(E processorEvent);
     }
 }

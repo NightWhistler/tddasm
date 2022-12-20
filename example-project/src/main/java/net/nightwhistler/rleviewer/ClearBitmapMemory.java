@@ -1,24 +1,22 @@
 package net.nightwhistler.rleviewer;
 
-import io.vavr.collection.List;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
-import net.nightwhistler.tddasm.mos65xx.ProgramElement;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
-public interface ClearBitmapMemory {
-    int VIC_REG_1=0xD011;
-    int VIC_REG_2=0xD016;
-    int VIC_BITMAP_VECTOR=0xD018;
-    Operand.TwoByteAddress BITMAP_DATA_START=address(0x2000);
-    Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
-    Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
-    Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
+public class ClearBitmapMemory {
+    private static int VIC_REG_1=0xD011;
+    private static int VIC_REG_2=0xD016;
+    private static int VIC_BITMAP_VECTOR=0xD018;
+    private static Operand.TwoByteAddress BITMAP_DATA_START=address(0x2000);
+    private static Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
+    private static Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
+    private static Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
     int KERNAL_CLEAR_SCR=0x544;
-    Operand.ByteValue CLEAR_VALUE=value(0x0F);
+    private static Operand.ByteValue CLEAR_VALUE=value(0x0F);
 
 
     /**
@@ -64,7 +62,7 @@ public interface ClearBitmapMemory {
      *
     */
 
-    static ProgramBuilder fillMemory() {
+    static ProgramBuilder clearBitmapMemory() {
 
         //This is a subroutine to clear 8000 memory addresses,
         return new ProgramBuilder().

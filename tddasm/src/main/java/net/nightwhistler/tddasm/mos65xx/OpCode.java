@@ -1,6 +1,5 @@
 package net.nightwhistler.tddasm.mos65xx;
 
-import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;

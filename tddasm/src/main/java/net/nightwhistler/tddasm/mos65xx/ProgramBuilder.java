@@ -1,8 +1,10 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
+import net.nightwhistler.tddasm.screen.ScreenCode;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
 
@@ -26,6 +28,10 @@ public class ProgramBuilder {
         return new ProgramBuilder(this.programElements.appendAll(elements));
     }
 
+    public ProgramBuilder include(ProgramBuilder other) {
+        return include(other.buildElements());
+    }
+
     public ProgramBuilder label(String label) {
         return withElement(new Label(label));
     }
@@ -35,22 +41,8 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder screenCodes(String text) {
-        byte[] ascii = text.getBytes(Charset.forName("ASCII"));
-        byte[] petscii = new byte[ascii.length];
-        for (int i =0; i < ascii.length; i++ ) {
-            byte a = ascii[i];
-            byte p;
-
-            if (a >= 97 && a < 122 ) {
-                p = (byte) (a - 96);
-            } else {
-                p = a;
-            }
-
-            petscii[i] = p;
-        }
-
-        return data(petscii);
+        byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
+        return data(ScreenCode.toScreenCodes(ascii));
     }
 
     public ProgramBuilder data(byte[] data) {

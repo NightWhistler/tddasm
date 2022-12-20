@@ -225,8 +225,16 @@ public class Processor {
         this.listeners.forEach(l -> l.receiveEvent(processorEvent));
     }
 
-    public void registerEventListener(ProcessorEvent.Listener listener) {
+    public void registerEventListener(ProcessorEvent.Listener<?> listener) {
         this.listeners = this.listeners.append(listener);
+    }
+
+    public <E extends ProcessorEvent> void registerEventListener(Class<E> clazz, ProcessorEvent.Listener<E> listener) {
+        registerEventListener((e) -> {
+            if (clazz.isInstance(e)) {
+                listener.receiveEvent((E) e);
+            }
+        });
     }
 
     private byte value(Operand operand) {
@@ -244,9 +252,27 @@ public class Processor {
         fireEvent(new ProcessorEvent.MemoryLocationChanged(address(location), oldValue, value));
     }
 
+    public byte peekValue(Operand.TwoByteAddress location) {
+        return peekValue(location.toInt());
+    }
+
     public byte peekValue(int location) {
         int offset = (location & 0xFFFF);
         return memory[offset];
+    }
+
+    public byte[] readMemory(Operand.TwoByteAddress from, Operand.TwoByteAddress to) {
+        return readMemory(from.toInt(), to.toInt());
+    }
+
+    public byte[] readMemory(int from, int to) {
+        int startOffset = (from & 0xFFFF);
+        int endOffset = (to & 0xFFFF);
+
+        byte[] result = new byte[endOffset-startOffset];
+        System.arraycopy(memory,startOffset,result, 0, result.length);
+
+        return result;
     }
 
     public void pushStack(byte value) {
