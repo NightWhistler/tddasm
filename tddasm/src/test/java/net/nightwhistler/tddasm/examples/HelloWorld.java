@@ -1,5 +1,6 @@
 package net.nightwhistler.tddasm.examples;
 
+import net.nightwhistler.ByteUtils;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.util.ProgramWriter;
@@ -9,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static net.nightwhistler.ByteUtils.bytes;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
@@ -60,11 +62,17 @@ public class HelloWorld {
     private static ProgramBuilder clearScreen() {
         return new ProgramBuilder()
           .label("clear_screen")
-                .lda(value(0x00))
+                .lda(value(0x20))
                 .sta(address(0x400).xIndexed())
                 .sta(address(0x500).xIndexed())
                 .sta(address(0x600).xIndexed())
-                .sta(address(0x6e8).xIndexed())
+                .sta(address(0x6E8).xIndexed())
+                //Grab the text colour and set it in colour RAM
+                .lda(address(0x286))
+                .sta(address(0xD800).xIndexed())
+                .sta(address(0xD900).xIndexed())
+                .sta(address(0xDA00).xIndexed())
+                .sta(address(0xDAE8).xIndexed())
                 .inx()
                 .bne("clear_screen")
                 .rts();

@@ -34,7 +34,7 @@ public class ScreenCode {
     public static byte toScreenCode(byte input) {
         if (input == '@') {
             return 0;
-        } else if (input >= 97 && input < 122 ) {
+        } else if (input >= 97 && input <= 122 ) {
             return (byte) (input - 96);
         } else {
             return input;
