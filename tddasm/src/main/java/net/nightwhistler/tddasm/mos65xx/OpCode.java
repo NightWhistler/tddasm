@@ -200,7 +200,7 @@ public enum OpCode {
             return List.of(mode(this,Implied, 0x60));
         }
     },
-    SAX,
+    SAX, //Illegal
     SBC,
     SBX,
     SEC,
@@ -246,13 +246,43 @@ public enum OpCode {
             );
         }
     },
-    TAS,
-    TAX,
-    TAY,
-    TSX,
-    TXA,
-    TXS,
-    TYA;
+    TAS, //Illegal
+    TAX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xAA));
+        }
+    },
+    TAY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xA8));
+        }
+    },
+    TSX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xBA));
+        }
+    },
+    TXA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x8A));
+        }
+    },
+    TXS {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x9A));
+        }
+    },
+    TYA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x98));
+        }
+    };
 
     public Option<AdressingModeMapping> findByAddressingMode(AddressingMode addressingMode) {
         return addressingModeMappings()
