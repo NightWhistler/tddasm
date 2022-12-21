@@ -24,7 +24,21 @@ public enum OpCode {
     ADC,
     ALR,
     ANC,
-    AND,
+    AND {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Value, 0x29),
+                    mode(this, AbsoluteAddress, 0x2D),
+                    mode(this, AbsoluteAddressX, 0x3D),
+                    mode(this, AbsoluteAddressY, 0x39),
+                    mode(this, ZeroPageAddress, 0x25),
+                    mode(this, ZeroPageAddressX, 0x35),
+                    mode(this, IndexedIndirectX, 0x21),
+                    mode(this, IndirectIndexedY, 0x31)
+            );
+        }
+    },
     ANE,
     ARR,
     ASL,
@@ -37,14 +51,24 @@ public enum OpCode {
         }
     },
     BIT,
-    BMI,
+    BMI {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x30));
+        }
+    },
     BNE {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(mode(this,AddressingMode.Relative, 0xD0));
         }
     },
-    BPL,
+    BPL {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x10));
+        }
+    },
     BRK {
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(mode(this, Implied, 0x00));
@@ -183,7 +207,21 @@ public enum OpCode {
     },
     LSR,
     NOP,
-    ORA,
+    ORA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Value, 0x09),
+                    mode(this, AbsoluteAddress, 0x0D),
+                    mode(this, AbsoluteAddressX, 0x1D),
+                    mode(this, AbsoluteAddressY, 0x19),
+                    mode(this, ZeroPageAddress, 0x05),
+                    mode(this, ZeroPageAddressX, 0x15),
+                    mode(this, IndexedIndirectX, 0x01),
+                    mode(this, IndirectIndexedY, 0x11)
+            );
+        }
+    },
     PHA,
     PHP,
     PLA,

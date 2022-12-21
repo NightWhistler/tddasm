@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
+import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ClearBitmapMemoryTest {
@@ -17,15 +18,19 @@ class ClearBitmapMemoryTest {
     public void testRun() {
         Processor processor = new Processor();
         Program clearBitMap = ClearBitmapMemory.clearBitmapMemory().buildProgram();
-        List<ProcessorEvent> operationPerformedEvents = new ArrayList<>();
+        List<ProcessorEvent.OperationPerformed> operationPerformedEvents = new ArrayList<>();
+        List<ProcessorEvent.MemoryLocationChanged> memoryLocationChangeds = new ArrayList<>();
 
-        processor.registerEventListener(operationPerformedEvents::add);
+        processor.registerEventListener(ProcessorEvent.OperationPerformed.class, operationPerformedEvents::add);
+        processor.registerEventListener(ProcessorEvent.MemoryLocationChanged.class, memoryLocationChangeds::add);
 
         processor.load(clearBitMap);
         processor.run(clearBitMap.startAddress());
 
         assertEquals(8000, operationPerformedEvents.stream()
-                .filter(o -> o instanceof  ProcessorEvent.OperationPerformed op && op.operation().opCode() == STA).count());
+                .filter(o -> o.operation().opCode() == STA).count());
 
+        //Make sure the last location changed is 0x3F3F
+        assertEquals(address(0x3F3F), memoryLocationChangeds.get(memoryLocationChangeds.size()-1).atLocation());
     }
 }

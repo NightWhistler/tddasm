@@ -20,8 +20,6 @@ public class HelloWorldTest {
         assertEquals("             Hello world!               ",
                 screen.getLineAsString(12));
 
-        assertEquals("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-                screen.getLineAsString(11));
     }
 
 }

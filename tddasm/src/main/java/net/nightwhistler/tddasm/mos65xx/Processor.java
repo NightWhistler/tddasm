@@ -68,6 +68,12 @@ public class Processor {
 
             case CMP -> setFlag((byte) (accumulator - value(operation.operand())));
 
+            case AND -> setFlag(accumulator = (byte) (accumulator & value(operation.operand())));
+
+            case ORA -> setFlag(accumulator = (byte) (accumulator | value(operation.operand())));
+
+            case TSX -> setFlag(xRegister = (byte) stackPointer);
+
             //Store y register
             case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
 
@@ -79,6 +85,10 @@ public class Processor {
             case BNE -> jumpIf(operation.operand(), !zeroFlag);
 
             case BEQ -> jumpIf(operation.operand(), zeroFlag);
+
+            case BPL -> jumpIf(operation.operand(), !negativeFlag);
+
+            case BMI -> jumpIf(operation.operand(), negativeFlag);
 
             case INX -> setFlag(++xRegister);
 
@@ -298,6 +308,12 @@ public class Processor {
         System.arraycopy(programData, 0, this.memory, startLocation, programData.length);
     }
 
+    public void loadBinary(byte[] binaryProgram) {
+        int startLocation = ByteUtils.littleEndianBytesToInt(binaryProgram[0], binaryProgram[1]);
+
+        System.arraycopy(binaryProgram, 2, this.memory, startLocation, binaryProgram.length - 2);
+    }
+
     /*
         Doing a "step"
          - Read program counter
@@ -327,7 +343,7 @@ public class Processor {
         byte opCode = readByte();
         OpCode.AdressingModeMapping mapping = OpCode.findByByteValue(opCode)
                 .getOrElseThrow(() ->
-                        new IllegalStateException("Unmappable instruction: " + Integer.toHexString(toUnsignedInt(opCode)))
+                        new IllegalStateException("Unmappable instruction: $" + Integer.toHexString(toUnsignedInt(opCode)))
                 );
 
         int bytesToRead = mapping.addressingMode().size();

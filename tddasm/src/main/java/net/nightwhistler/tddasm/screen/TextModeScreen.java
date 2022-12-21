@@ -22,6 +22,16 @@ public record TextModeScreen(Processor processor) {
         return processor.readMemory(SCREEN_START.plus(base), SCREEN_START.plus(base).plus(COLS));
     }
 
+    public String getScreenContents() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for ( int i=0; i < ROWS; i++) {
+            stringBuilder.append(getLineAsString(i));
+            stringBuilder.append('\n');
+        }
+
+        return stringBuilder.toString();
+    }
+
     public String getLineAsString(int line) {
         byte[] data = getLine(line);
         return new String(fromScreenCodes(data));
