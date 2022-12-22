@@ -1,6 +1,8 @@
 package net.nightwhistler.tddasm.examples;
 
 import net.nightwhistler.ByteUtils;
+import net.nightwhistler.tddasm.c64.kernal.ChrOut;
+import net.nightwhistler.tddasm.c64.kernal.ClearScreen;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.util.ProgramWriter;
@@ -11,19 +13,25 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import static net.nightwhistler.ByteUtils.bytes;
+import static net.nightwhistler.tddasm.c64.kernal.ChrOut.CHROUT_ADDRESS;
+import static net.nightwhistler.tddasm.c64.kernal.ClearScreen.CLR_SCREEN_ADDRESS;
+import static net.nightwhistler.tddasm.mos65xx.Label.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 public class HelloWorld {
-    public static Program main() {
+
+    /**
+     * A Hello Wold that doesn't use any Kernal routines
+     * @return
+     */
+    public static Program usingPureASM() {
 
         /*
         Hello world example taken from
         https://8bitheaven.home.blog/2020/01/07/c64-assembly-hello-world/
-
-        Adapted to use a custom clear screen routine, since we don't support
-        emulating Kernal routines yet.
+        and modified to not use the kernal
          */
         return new ProgramBuilder()
                       .label("start")
@@ -78,12 +86,33 @@ public class HelloWorld {
                 .rts();
     }
 
+    /**
+     * A much shorter Hello World using Kernal routines
+     * @return
+     */
+    public static Program usingKernal() {
+        return new ProgramBuilder()
+                .jsr(CLR_SCREEN_ADDRESS)  //$e5ff, unofficial but used a lot
+                .lda(value(0x00))
+            .label("write")
+                .lda(addressOf("hello").xIndexed())
+                .jsr(CHROUT_ADDRESS) //$FFD2
+                .inx()
+                .cpx(value(0x0B))
+                .bne("write")
+                .rts()
+            .label("hello")
+                .screenCodes("HELLO WORLD")
+                .buildProgram();
+    }
+
     public static void main(String argv[]) {
         try {
             File output = new File("hello_world2.prg");
             output.createNewFile();
             FileOutputStream fout = new FileOutputStream(output);
-            var program = main().withBASICStarter();
+//            var program = usingPureASM().withBASICStarter();
+            var program = usingKernal().withBASICStarter();
             program.printASM(new PrintWriter(System.out), true);
 
             ProgramWriter.writeProgram(program, fout);
