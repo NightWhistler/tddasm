@@ -1,9 +1,6 @@
 package net.nightwhistler.tddasm.screen;
 
-import io.vavr.collection.List;
-import net.nightwhistler.tddasm.mos65xx.Data;
-import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
-import net.nightwhistler.tddasm.mos65xx.ProgramElement;
+import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

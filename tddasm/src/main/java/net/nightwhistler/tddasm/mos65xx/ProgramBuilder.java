@@ -1,7 +1,7 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
-import net.nightwhistler.tddasm.screen.ScreenCode;
+import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

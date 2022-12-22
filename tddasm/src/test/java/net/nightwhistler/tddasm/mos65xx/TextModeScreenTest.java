@@ -1,7 +1,6 @@
 package net.nightwhistler.tddasm.mos65xx;
 
-import io.vavr.collection.List;
-import net.nightwhistler.tddasm.screen.TextModeScreen;
+import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

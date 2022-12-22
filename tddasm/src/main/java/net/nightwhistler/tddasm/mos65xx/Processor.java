@@ -4,9 +4,13 @@ import io.vavr.collection.List;
 import io.vavr.control.Option;
 import net.nightwhistler.ByteUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static java.lang.Byte.toUnsignedInt;
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 
 public class Processor {
     private byte accumulator;
@@ -29,9 +33,20 @@ public class Processor {
 
     private Program currentProgram = null;
 
+    private Map<Operand.TwoByteAddress, JavaRoutine> kernalRoutines = new HashMap<>();
+
     private List<ProcessorEvent.Listener> listeners = List.empty();
 
     private int operationCount = 0;
+
+    public void registerJavaRoutine(JavaRoutine javaRoutine) {
+        registerJavaRoutine(javaRoutine.location(), javaRoutine);
+    }
+
+    public void registerJavaRoutine(Operand.TwoByteAddress address, JavaRoutine javaRoutine) {
+        this.kernalRoutines.put(address, javaRoutine);
+        javaRoutine.onLoad(this);
+    }
 
     /**
      * Tells the Processor to process an operation.
@@ -152,14 +167,9 @@ public class Processor {
         if (this.currentProgram == null) {
             return List.empty();
         } else {
-            return currentProgram.elementsForLocation(address)
-                    .flatMap(element -> {
-                        if (element instanceof Label l) {
-                            return List.of(l);
-                        } else {
-                            return List.empty();
-                        }
-                    });
+            return currentProgram
+                    .elementsForLocation(address)
+                    .flatMap(element -> element instanceof Label l ? List.of(l) : List.empty());
         }
     }
 
@@ -255,6 +265,10 @@ public class Processor {
         };
     }
 
+    public void pokeValue(Operand.TwoByteAddress address, byte value) {
+        pokeValue(address.toInt(), value);
+    }
+
     public void pokeValue(int location, byte value) {
         int offset = (location & 0xFFFF);
         byte oldValue = memory[offset];
@@ -308,6 +322,12 @@ public class Processor {
         System.arraycopy(programData, 0, this.memory, startLocation, programData.length);
     }
 
+    public void storeOperationAt(Operand.TwoByteAddress address, Operation operation) {
+        int offset = address.toInt();
+        byte[] operationBytes = operation.bytes();
+        System.arraycopy(operationBytes, 0, memory, offset, operationBytes.length);
+    }
+
     public void loadBinary(byte[] binaryProgram) {
         int startLocation = ByteUtils.littleEndianBytesToInt(binaryProgram[0], binaryProgram[1]);
 
@@ -317,12 +337,10 @@ public class Processor {
     /*
         Doing a "step"
          - Read program counter
-         - Find ProgramElement at that offset if Program present (might be more than 1 if labels are present)
          - Read the right amount of bytes from memory at that offset
-         - Verify against the ProgramElement, decide if execution should proceed
+         - Parse to an Operation
+         - Execute the Operation
          - Update the Program counter
-         - Execute the ProgramElement if it is an Operation
-
      */
 
     public void run(Operand.TwoByteAddress address, int maxOperationCount) {
@@ -338,6 +356,20 @@ public class Processor {
     }
 
     public void step() {
+        if (kernalRoutines.containsKey(this.programCounter)) {
+            executeKernalRoutine();
+        } else {
+            executeOperationFromMemory();
+        }
+    }
+
+    private void executeKernalRoutine() {
+        JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
+        javaRoutine.execute(this);
+        performOperation(new Operation(OpCode.RTS, noValue()));
+    }
+
+    private void executeOperationFromMemory() {
         var programCounterBefore = programCounter;
 
         byte opCode = readByte();
@@ -349,8 +381,8 @@ public class Processor {
         int bytesToRead = mapping.addressingMode().size();
         byte[] data = switch (bytesToRead) {
             case 0 -> new byte[0];
-            case 1 -> new byte[] { readByte() };
-            case 2 -> new byte[] { readByte(), readByte() };
+            case 1 -> new byte[]{readByte()};
+            case 2 -> new byte[]{readByte(), readByte()};
             default -> throw new IllegalStateException("Illegal instruction size " + bytesToRead);
         };
 

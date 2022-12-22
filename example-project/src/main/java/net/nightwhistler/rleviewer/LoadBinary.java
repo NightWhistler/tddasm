@@ -1,9 +1,9 @@
 package net.nightwhistler.rleviewer;
 
-import net.nightwhistler.ByteUtils;
+import net.nightwhistler.tddasm.c64.kernal.ChrOut;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.Processor;
-import net.nightwhistler.tddasm.screen.TextModeScreen;
+import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 
 public class LoadBinary {
     public static void main(String argv[]) {
@@ -14,6 +14,7 @@ public class LoadBinary {
 
             var start = Operand.address(0x80D);
             Processor processor = new Processor();
+            processor.registerJavaRoutine(new ChrOut());
             TextModeScreen screen = new TextModeScreen(processor);
             processor.registerEventListener( e -> System.out.println(e));
             processor.loadBinary(data);

@@ -2,7 +2,7 @@ package net.nightwhistler.tddasm.examples;
 
 import net.nightwhistler.tddasm.mos65xx.Processor;
 import net.nightwhistler.tddasm.mos65xx.Program;
-import net.nightwhistler.tddasm.screen.TextModeScreen;
+import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

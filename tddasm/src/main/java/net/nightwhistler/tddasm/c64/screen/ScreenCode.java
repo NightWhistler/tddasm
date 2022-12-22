@@ -1,6 +1,5 @@
-package net.nightwhistler.tddasm.screen;
+package net.nightwhistler.tddasm.c64.screen;
 
-import java.nio.charset.Charset;
 import java.util.function.Function;
 
 public class ScreenCode {

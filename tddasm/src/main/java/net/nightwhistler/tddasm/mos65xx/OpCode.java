@@ -123,7 +123,12 @@ public enum OpCode {
             return List.of(mode(this,Implied, 0xCA));
         }
     },
-    DEY,
+    DEY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,Implied, 0x88));
+        }
+    },
     EOR,
     INC {
         @Override
