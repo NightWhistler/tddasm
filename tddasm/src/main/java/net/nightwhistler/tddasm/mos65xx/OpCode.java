@@ -21,7 +21,21 @@ import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddressY;
  *
  */
 public enum OpCode {
-    ADC,
+    ADC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    OpCode.mode(this, Value, 0x69),
+                    OpCode.mode(this, AbsoluteAddress, 0x6D),
+                    OpCode.mode(this, AbsoluteAddressX, 0x7D),
+                    OpCode.mode(this, AbsoluteAddressY, 0x79),
+                    OpCode.mode(this, ZeroPageAddress, 0x65),
+                    OpCode.mode(this, ZeroPageAddressX, 0x75),
+                    OpCode.mode(this, IndexedIndirectX, 0x61),
+                    OpCode.mode(this, IndexedIndirectX, 0x71)
+            );
+        }
+    },
     ALR,
     ANC,
     AND {
@@ -42,8 +56,16 @@ public enum OpCode {
     ANE,
     ARR,
     ASL,
-    BCC,
-    BCS,
+    BCC {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x90));
+        }
+    },
+    BCS {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0xB0));
+        }
+    },
     BEQ {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -76,7 +98,11 @@ public enum OpCode {
     },
     BVC,
     BVS,
-    CLC,
+    CLC {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x18));
+        }
+    },
     CLD,
     CLI,
     CLV,
@@ -116,7 +142,17 @@ public enum OpCode {
         }
     },
     DCP,
-    DEC,
+    DEC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AbsoluteAddress, 0xCE),
+                    mode(this,AbsoluteAddressX, 0xDE),
+                    mode(this,ZeroPageAddress, 0xC6),
+                    mode(this,ZeroPageAddressX, 0xD6)
+            );
+        }
+    },
     DEX {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -227,9 +263,24 @@ public enum OpCode {
             );
         }
     },
-    PHA,
-    PHP,
-    PLA,
+    PHA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x48));
+        }
+    },
+    PHP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x08));
+        }
+    },
+    PLA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x68));
+        }
+    },
     PLP,
     RLA,
     ROL,
@@ -243,9 +294,29 @@ public enum OpCode {
         }
     },
     SAX, //Illegal
-    SBC,
+    SBC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    OpCode.mode(this, Value, 0xE9),
+                    OpCode.mode(this, Value, 0xEB), //This has 2 codes for the same mode
+                    OpCode.mode(this, AbsoluteAddress, 0xED),
+                    OpCode.mode(this, AbsoluteAddressX, 0xFD),
+                    OpCode.mode(this, AbsoluteAddressY, 0xF9),
+                    OpCode.mode(this, ZeroPageAddress, 0xE5),
+                    OpCode.mode(this, ZeroPageAddressX, 0xF5),
+                    OpCode.mode(this, IndexedIndirectX, 0xE1),
+                    OpCode.mode(this, IndexedIndirectX, 0xF1)
+            );
+        }
+    },
     SBX,
-    SEC,
+    SEC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x38));
+        }
+    },
     SED,
     SEI,
     SHA,

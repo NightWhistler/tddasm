@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 
 import static net.nightwhistler.tddasm.mos65xx.OpCode.BRK;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.CLC;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.INC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.INY;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JSR;
@@ -15,6 +17,8 @@ import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDX;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.LDY;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.SBC;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.SEC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
@@ -276,6 +280,47 @@ class ProcessorTest {
         processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
         verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FC), (byte) 0, (byte) 3));
 
+    }
+
+    @Test
+    public void testSBC() {
+        Processor processor = new Processor();
+        processor.performOperation(operation(LDA, value(3)));
+        processor.performOperation(operation(SEC));
+        processor.performOperation(operation(SBC, value(5)));
+
+        assertEquals(-2, processor.getAccumulatorValue());
+        assertEquals(true, processor.isNegativeFlagSet());
+        assertEquals(false, processor.isZeroFlagSet());
+        assertEquals(false, processor.isCarryFlagSet());
+
+        processor.performOperation(operation(LDA, value(3)));
+        processor.performOperation(operation(CLC));
+        processor.performOperation(operation(SBC, value(5)));
+
+        assertEquals(-3, processor.getAccumulatorValue());
+        assertEquals(true, processor.isNegativeFlagSet());
+        assertEquals(false, processor.isZeroFlagSet());
+        assertEquals(false, processor.isCarryFlagSet());
+
+        processor.performOperation(operation(LDA, value(5)));
+        processor.performOperation(operation(SEC));
+        processor.performOperation(operation(SBC, value(4)));
+
+        assertEquals(1, processor.getAccumulatorValue());
+        assertEquals(false, processor.isNegativeFlagSet());
+        assertEquals(false, processor.isZeroFlagSet());
+        assertEquals(true, processor.isCarryFlagSet());
+    }
+
+    @Test
+    public void testInc() {
+        Processor processor = new Processor();
+        processor.performOperation(operation(LDA, value(5)));
+        processor.performOperation(operation(STA, address(0x3000)));
+        processor.performOperation(operation(INC, address(0x3000)));
+
+        assertEquals(6, processor.peekValue(0x3000));
     }
 
 }

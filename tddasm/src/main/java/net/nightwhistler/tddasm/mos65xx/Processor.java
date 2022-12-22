@@ -6,11 +6,13 @@ import net.nightwhistler.ByteUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.lang.Byte.toUnsignedInt;
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
+import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 
 public class Processor {
     private byte accumulator;
@@ -89,6 +91,35 @@ public class Processor {
 
             case TSX -> setFlag(xRegister = (byte) stackPointer);
 
+            case TXS -> stackPointer = toUnsignedInt(xRegister);
+
+            case TAY -> setFlag(yRegister = accumulator);
+
+            case TYA -> setFlag(accumulator = yRegister);
+
+            case TXA -> setFlag(accumulator = xRegister);
+
+            case TAX -> setFlag(xRegister = accumulator);
+
+            case PHA -> pushStack(accumulator);
+
+            case PLA -> setFlag(accumulator = popStack());
+
+            case SEC -> carryFlag = true;
+
+            case SBC -> {
+                byte carryComplement = (byte) (carryFlag ? 0 : 1);
+                setFlag(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
+                carryFlag = !negativeFlag;
+            }
+
+            case ADC -> {
+                int carryValue = carryFlag ? 1: 0;
+                int result = accumulator + value(operation.operand()) + carryValue;
+                setFlag(accumulator = (byte) (result & 0xFFFF));
+                carryFlag = result > 0xFF;
+             }
+
             //Store y register
             case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
 
@@ -105,6 +136,10 @@ public class Processor {
 
             case BMI -> jumpIf(operation.operand(), negativeFlag);
 
+            case BCS -> jumpIf(operation.operand(), carryFlag);
+
+            case BCC -> jumpIf(operation.operand(), !carryFlag);
+
             case INX -> setFlag(++xRegister);
 
             case DEX -> setFlag(--xRegister);
@@ -117,7 +152,9 @@ public class Processor {
 
             case RTS -> doRts();
 
-            case INC -> doInc((Operand.AddressOperand) operation.operand());
+            case INC -> doModify((Operand.AddressOperand) operation.operand(), b -> ++b);
+
+            case DEC -> doModify((Operand.AddressOperand) operation.operand(), b -> --b);
 
             case BRK -> this.breakFlag = true;
 
@@ -127,10 +164,11 @@ public class Processor {
         operationCount++;
     }
 
-    private void doInc(Operand.AddressOperand operand) {
+    private void doModify(Operand.AddressOperand operand, Function<Byte, Byte> modifier) {
         int location = location(operand);
         byte value = peekValue(location);
-        setFlag(++value);
+        value = modifier.apply(value);
+        setFlag(value);
         pokeValue(location, value);
     }
 
@@ -366,7 +404,7 @@ public class Processor {
     private void executeKernalRoutine() {
         JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
         javaRoutine.execute(this);
-        performOperation(new Operation(OpCode.RTS, noValue()));
+        performOperation(operation(OpCode.RTS));
     }
 
     private void executeOperationFromMemory() {
@@ -386,11 +424,12 @@ public class Processor {
             default -> throw new IllegalStateException("Illegal instruction size " + bytesToRead);
         };
 
-        Operation operation = new Operation(mapping.opCode(), mapping.addressingMode().toOperand(data));
+        Operation operation = operation(mapping.opCode(), mapping.addressingMode().toOperand(data));
+        fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
+
         performOperation(operation);
 
-        fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag, breakFlag));
-        fireEvent(new ProcessorEvent.OperationPerformed(programCounterBefore, operation));
+        fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, stackPointer, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag, breakFlag));
     }
 
     private byte readByte() {

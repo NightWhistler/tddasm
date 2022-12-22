@@ -10,6 +10,7 @@ public sealed interface ProcessorEvent {
 
     record RegisterStateChangedEvent(
             Operand.TwoByteAddress programCounter,
+            int stackPointer,
             byte xRegister,
             byte yRegister,
             byte accumulator,
