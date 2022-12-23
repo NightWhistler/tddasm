@@ -21,6 +21,7 @@ import static net.nightwhistler.tddasm.mos65xx.OpCode.SBC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.SEC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
@@ -258,21 +259,21 @@ class ProcessorTest {
         processor.registerEventListener(mockListener);
 
         processor.performOperation(new Operation(LDA, value(3)));
-//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
-//
-//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2000), (byte) 0, (byte) 3));
-//
-//        processor.performOperation(new Operation(LDY, value(0x10)));
-//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
-//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2010), (byte) 0, (byte) 3));
+        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
 
-//        processor.performOperation(new Operation(LDY, value(0xFA)));
-//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
-//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FA), (byte) 0, (byte) 3));
+        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2000), (byte) 0, (byte) 3));
 
-//        processor.performOperation(new Operation(INY, noValue()));
-//        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
-//        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FB), (byte) 0, (byte) 3));
+        processor.performOperation(new Operation(LDY, value(0x10)));
+        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x2010), (byte) 0, (byte) 3));
+
+        processor.performOperation(new Operation(LDY, value(0xFA)));
+        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FA), (byte) 0, (byte) 3));
+
+        processor.performOperation(new Operation(INY, noValue()));
+        processor.performOperation(new Operation(STA, zeroPage(0xFB).indirectIndexedY()));
+        verify(mockListener).receiveEvent(new ProcessorEvent.MemoryLocationChanged(address(0x20FB), (byte) 0, (byte) 3));
 
         processor.performOperation(new Operation(LDY, value(0xFA)));
         processor.performOperation(new Operation(INY, noValue()));
@@ -321,6 +322,32 @@ class ProcessorTest {
         processor.performOperation(operation(INC, address(0x3000)));
 
         assertEquals(6, processor.peekValue(0x3000));
+    }
+
+    @Test
+    public void testInterruptHandling() {
+
+        Program simpleInterruptProgram = new ProgramBuilder()
+                .sei()
+                .lda(addressOf("interrupt_routine"))
+                .lda(value(2))
+                .sta(address(0x2300))
+                .lda(value(3))
+                .adc(address(0x2300))
+                .sta(address(0x2300))
+                .cli()
+                .rts()
+            .label("interrupt_routine")
+                .lda(value(0x99))
+                .rti()
+            .buildProgram();
+
+        Processor processor = new Processor();
+        processor.load(simpleInterruptProgram);
+        processor.run(simpleInterruptProgram.startAddress());
+
+        assertEquals(5, processor.peekValue(0x2300));
+
     }
 
 }

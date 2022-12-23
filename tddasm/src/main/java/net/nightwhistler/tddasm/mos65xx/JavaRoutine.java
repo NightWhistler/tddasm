@@ -1,5 +1,7 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
+
 /**
  * Interface for Java routines.
  *
@@ -28,11 +30,20 @@ public interface JavaRoutine {
     }
 
     /**
+     * What the processor should execute after running this Java routine.
+     * The default is RTS, should be RTI for interrupt handlers.
+     * @return
+     */
+    default Operation endWith() {
+        return Operation.operation(RTS);
+    }
+
+    /**
      * The address that this routine should be located at.
      *
      * @return
      */
-    public Operand.TwoByteAddress location();
+    Operand.TwoByteAddress location();
 
     /**
      * How many bytes in memory this routine should take up.
@@ -41,5 +52,5 @@ public interface JavaRoutine {
      */
     int size();
 
-    public void execute(Processor processor);
+    void execute(Processor processor);
 }

@@ -106,6 +106,11 @@ public sealed interface Operand {
             return new TwoByteAddress(AddressingMode.AbsoluteAddressY, lowByte, highByte);
         }
 
+        public TwoByteAddress indirect() {
+            return new TwoByteAddress(AddressingMode.AbsoluteIndirect, lowByte, highByte);
+        }
+
+
         @Override
         public byte[] bytes() {
             return new byte[]{ lowByte, highByte };

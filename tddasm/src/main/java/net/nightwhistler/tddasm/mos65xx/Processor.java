@@ -3,6 +3,7 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import net.nightwhistler.ByteUtils;
+import net.nightwhistler.tddasm.c64.kernal.Kernal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.function.Function;
 
 import static java.lang.Byte.toUnsignedInt;
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 
@@ -36,6 +38,16 @@ public class Processor {
 
     private int operationCount = 0;
 
+    public Processor() {
+        this(true);
+    }
+
+    public Processor(boolean loadKernalRoutines) {
+        if (loadKernalRoutines) {
+            Kernal.registerKernalRoutines(this);
+        }
+    }
+
     public void registerJavaRoutine(JavaRoutine javaRoutine) {
         registerJavaRoutine(javaRoutine.location(), javaRoutine);
     }
@@ -60,58 +72,58 @@ public class Processor {
 
         switch (operation.opCode()) {
             //Load Acumulator
-            case LDA -> setFlag(accumulator = value(operation.operand()));
+            case LDA -> setFlags(accumulator = value(operation.operand()));
 
             //Store Accumulator
             case STA -> pokeValue(location((Operand.AddressOperand) operation.operand()), accumulator);
 
             //Load X register
-            case LDX -> setFlag(xRegister = value(operation.operand()));
+            case LDX -> setFlags(xRegister = value(operation.operand()));
 
             //Store X register
             case STX -> pokeValue(location((Operand.AddressOperand) operation.operand()), xRegister);
 
             //Load y register
-            case LDY -> setFlag(yRegister = value(operation.operand()));
+            case LDY -> setFlags(yRegister = value(operation.operand()));
 
-            case CPY -> setFlag((byte) (yRegister - value(operation.operand())));
+            case CPY -> setFlags((byte) (yRegister - value(operation.operand())));
 
-            case CPX -> setFlag((byte) (xRegister - value(operation.operand())));
+            case CPX -> setFlags((byte) (xRegister - value(operation.operand())));
 
-            case CMP -> setFlag((byte) (accumulator - value(operation.operand())));
+            case CMP -> setFlags((byte) (accumulator - value(operation.operand())));
 
-            case AND -> setFlag(accumulator = (byte) (accumulator & value(operation.operand())));
+            case AND -> setFlags(accumulator = (byte) (accumulator & value(operation.operand())));
 
-            case ORA -> setFlag(accumulator = (byte) (accumulator | value(operation.operand())));
+            case ORA -> setFlags(accumulator = (byte) (accumulator | value(operation.operand())));
 
-            case TSX -> setFlag(xRegister = (byte) stackPointer);
+            case TSX -> setFlags(xRegister = (byte) stackPointer);
 
             case TXS -> stackPointer = toUnsignedInt(xRegister);
 
-            case TAY -> setFlag(yRegister = accumulator);
+            case TAY -> setFlags(yRegister = accumulator);
 
-            case TYA -> setFlag(accumulator = yRegister);
+            case TYA -> setFlags(accumulator = yRegister);
 
-            case TXA -> setFlag(accumulator = xRegister);
+            case TXA -> setFlags(accumulator = xRegister);
 
-            case TAX -> setFlag(xRegister = accumulator);
+            case TAX -> setFlags(xRegister = accumulator);
 
             case PHA -> pushStack(accumulator);
 
-            case PLA -> setFlag(accumulator = popStack());
+            case PLA -> setFlags(accumulator = popStack());
 
             case SEC -> statusRegister.setCarryFlag(true);
 
             case SBC -> {
                 byte carryComplement = (byte) (statusRegister.isCarryFlagSet() ? 0 : 1);
-                setFlag(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
+                setFlags(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
                 statusRegister.setCarryFlag(!statusRegister.isNegativeFlagSet());
             }
 
             case ADC -> {
                 int carryValue = statusRegister.isCarryFlagSet() ? 1: 0;
                 int result = accumulator + value(operation.operand()) + carryValue;
-                setFlag(accumulator = (byte) (result & 0xFFFF));
+                setFlags(accumulator = (byte) (result & 0xFFFF));
                 statusRegister.setCarryFlag(result > 0xFF);
              }
 
@@ -135,23 +147,36 @@ public class Processor {
 
             case BCC -> jumpIf(operation.operand(), !statusRegister.isCarryFlagSet());
 
-            case INX -> setFlag(++xRegister);
+            case INX -> setFlags(++xRegister);
 
-            case DEX -> setFlag(--xRegister);
+            case DEX -> setFlags(--xRegister);
 
-            case INY -> setFlag(++yRegister);
+            case INY -> setFlags(++yRegister);
 
-            case DEY -> setFlag(--yRegister);
+            case DEY -> setFlags(--yRegister);
 
             case JSR -> doJsr(operation.operand());
 
-            case RTS -> doRts();
+            case RTS -> doRTS();
 
             case INC -> doModify((Operand.AddressOperand) operation.operand(), b -> ++b);
 
             case DEC -> doModify((Operand.AddressOperand) operation.operand(), b -> --b);
 
-            case BRK -> this.statusRegister.setBreakCommandFlag(true); //TODO: Request interrupt
+            case RTI -> doRTI();
+
+            case SEI -> statusRegister.setInterruptDisableFlag(true);
+
+            case CLI -> statusRegister.setInterruptDisableFlag(false);
+
+            case BRK -> {
+                this.statusRegister.setBreakCommandFlag(true);
+                //The BRK instruction takes 1 byte but increments the PC by 2
+                //Since the generic handling will only increase it by 1, we
+                //add an extra increment here.
+                this.programCounter.increment();
+                doInterruptHandling();
+            }
 
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
@@ -163,7 +188,7 @@ public class Processor {
         int location = location(operand);
         byte value = peekValue(location);
         value = modifier.apply(value);
-        setFlag(value);
+        setFlags(value);
         pokeValue(location, value);
     }
 
@@ -173,7 +198,7 @@ public class Processor {
         jump(operand);
     }
 
-    private void doRts() {
+    private void doRTS() {
         byte lowByte = popStack();
         byte highByte = popStack();
         this.programCounter = new Operand.TwoByteAddress(lowByte, highByte);
@@ -206,7 +231,7 @@ public class Processor {
         }
     }
 
-    private void setFlag(byte newValue) {
+    private void setFlags(byte newValue) {
         this.statusRegister.setZeroFlag(newValue == 0);
         this.statusRegister.setNegativeFlag(newValue < 0);
     }
@@ -262,10 +287,17 @@ public class Processor {
             }
             case Operand.TwoByteAddress twoByteAddress -> {
                 var baseAddress = littleEndianBytesToInt(twoByteAddress.lowByte(), twoByteAddress.highByte());
+
                 yield switch (twoByteAddress.addressingMode()) {
                     case AbsoluteAddress -> baseAddress;
                     case AbsoluteAddressX -> baseAddress + toUnsignedInt(xRegister);
                     case AbsoluteAddressY -> baseAddress + toUnsignedInt(yRegister);
+                    case AbsoluteIndirect -> {
+                        var lowByte = peekValue(baseAddress);
+                        var highByte = peekValue(baseAddress + 1);
+
+                        yield littleEndianBytesToInt(lowByte, highByte);
+                    }
                     default -> throw new IllegalArgumentException(
                             String.format("Can't use %s for TwoByteAddress", twoByteAddress.addressingMode())
                     );
@@ -396,10 +428,39 @@ public class Processor {
         }
     }
 
+    public void requestInterrupt() {
+       if (!statusRegister.isInterruptDisableFlagSet()) {
+           doInterruptHandling();
+       }
+    }
+
+    private void doRTI() {
+        statusRegister.setFrom(popStack());
+        byte newLowByte = popStack();
+        byte newHighByte = popStack();
+        setProgramCounter(new Operand.TwoByteAddress(newLowByte, newHighByte));
+    }
+
+    private void doInterruptHandling() {
+        //Push status register on the stack
+        //Push accumulator on the stack??
+        //Push PC on the stack
+        pushStack(programCounter.highByte());
+        pushStack(programCounter.lowByte());
+        pushStack(statusRegister.toByte());
+        statusRegister.setInterruptDisableFlag(true);
+
+        if (statusRegister.isBreakCommandFlagSet()) {
+            performOperation(operation(JMP, address(0x0316).indirect()));
+        } else {
+            performOperation(operation(JMP, address(0x0314).indirect()));
+        }
+    }
+
     private void executeKernalRoutine() {
         JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
         javaRoutine.execute(this);
-        performOperation(operation(OpCode.RTS));
+        performOperation(javaRoutine.endWith());
     }
 
     private void executeOperationFromMemory() {

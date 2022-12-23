@@ -6,5 +6,7 @@ public class Kernal {
     public static void registerKernalRoutines(Processor processor) {
         processor.registerJavaRoutine(new ChrOut());
         processor.registerJavaRoutine(new ClearScreen());
+        processor.registerJavaRoutine(new DefaultBrkHandler());
+        processor.registerJavaRoutine(new DefaultInterruptHandler());
     }
 }

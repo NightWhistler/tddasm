@@ -104,7 +104,11 @@ public enum OpCode {
         }
     },
     CLD,
-    CLI,
+    CLI {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x58));
+        }
+    },
     CLV,
     CMP {
         @Override
@@ -286,7 +290,12 @@ public enum OpCode {
     ROL,
     ROR,
     RRA,
-    RTI,
+    RTI {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,Implied, 0x40));
+        }
+    },
     RTS {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -318,7 +327,11 @@ public enum OpCode {
         }
     },
     SED,
-    SEI,
+    SEI {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x78));
+        }
+    },
     SHA,
     SHX,
     SHY,
