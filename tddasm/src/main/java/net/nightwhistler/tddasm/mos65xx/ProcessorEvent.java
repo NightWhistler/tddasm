@@ -8,6 +8,8 @@ public sealed interface ProcessorEvent {
 
     record JumpedTo(Operand.TwoByteAddress toLocation, List<Label> labels) implements ProcessorEvent {}
 
+    record InterruptRequest(Operand.TwoByteAddress programCounterBefore) implements ProcessorEvent {}
+
     record RegisterStateChangedEvent(
             Operand.TwoByteAddress programCounter,
             int stackPointer,

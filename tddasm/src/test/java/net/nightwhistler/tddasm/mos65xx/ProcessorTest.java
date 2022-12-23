@@ -341,16 +341,25 @@ class ProcessorTest {
                 .sta(address(0x2300))
                 .rts()
             .label("interrupt_routine")
-                .lda(value(0x99))
+                .lda(value(99))
+                .sta(address(0x2211))
                 .rti()
             .buildProgram();
 
         Processor processor = new Processor();
         processor.load(simpleInterruptProgram);
-        processor.run(simpleInterruptProgram.startAddress());
 
-        assertEquals(5, processor.peekValue(0x2300));
+        processor.setProgramCounter(simpleInterruptProgram.startAddress());
 
+        //Take 9 steps, which is right after the lda #3 instruction
+        for ( int i=0; i < 9; i++) {
+            processor.step();
+        }
+        processor.requestInterrupt();
+        processor.run();
+
+        assertEquals(101, Byte.toUnsignedInt(processor.peekValue(0x2300)));
+        assertEquals(99, Byte.toUnsignedInt(processor.peekValue(0x2211)));
     }
 
 }

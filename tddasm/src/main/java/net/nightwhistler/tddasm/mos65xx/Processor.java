@@ -420,6 +420,11 @@ public class Processor {
         run(address, Integer.MAX_VALUE);
     }
 
+    public void run() {
+        run(programCounter, Integer.MAX_VALUE);
+    }
+
+
     public void step() {
         if (kernalRoutines.containsKey(this.programCounter)) {
             executeKernalRoutine();
@@ -442,9 +447,7 @@ public class Processor {
     }
 
     private void doInterruptHandling() {
-        //Push status register on the stack
-        //Push accumulator on the stack??
-        //Push PC on the stack
+        fireEvent(new ProcessorEvent.InterruptRequest(programCounter));
         pushStack(programCounter.highByte());
         pushStack(programCounter.lowByte());
         pushStack(statusRegister.toByte());
