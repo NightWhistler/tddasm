@@ -36,7 +36,7 @@
    - Run that operation on the Processor, make sure no Exception is thrown.
    - Error message: "Operations should either be implemented or declared
      illegal"
-* TODO Create a StatusRegister class
+* DONE Create a StatusRegister class
    - Move all the current boolean flags into a class
    - This class has a toByte() method which puts all the flags in the proper
      bits
@@ -46,3 +46,6 @@
 * TODO Create a Maven code generation plugin.
   Once we have the compiler class it's a matter of simply calling that (I
   hope!)
+* TODO Allow binary data as .*.
+  This allows nicer ways of entering sprites visually and can fairly easily
+  be parsed to byte values.

@@ -14,10 +14,7 @@ public sealed interface ProcessorEvent {
             byte xRegister,
             byte yRegister,
             byte accumulator,
-            boolean zeroFlag,
-            boolean negativeFlag,
-            boolean carryFlag,
-            boolean breakFlag
+            StatusRegister statusRegister
             ) implements ProcessorEvent {}
 
     interface Listener<E extends ProcessorEvent> {

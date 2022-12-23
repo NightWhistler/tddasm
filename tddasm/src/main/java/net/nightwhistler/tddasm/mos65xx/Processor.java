@@ -11,7 +11,6 @@ import java.util.function.Function;
 import static java.lang.Byte.toUnsignedInt;
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
-import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 
 public class Processor {
@@ -19,11 +18,7 @@ public class Processor {
     private byte xRegister;
     private byte yRegister;
 
-    private boolean zeroFlag;
-    private boolean negativeFlag;
-    private boolean carryFlag;
-
-    private boolean breakFlag;
+    private StatusRegister statusRegister = new StatusRegister();
 
     private int stackPointer = 0xF3;
 
@@ -61,7 +56,7 @@ public class Processor {
      */
     public void performOperation(Operation operation) {
 
-        this.breakFlag = false;
+        this.statusRegister.setBreakCommandFlag(false);
 
         switch (operation.opCode()) {
             //Load Acumulator
@@ -105,40 +100,40 @@ public class Processor {
 
             case PLA -> setFlag(accumulator = popStack());
 
-            case SEC -> carryFlag = true;
+            case SEC -> statusRegister.setCarryFlag(true);
 
             case SBC -> {
-                byte carryComplement = (byte) (carryFlag ? 0 : 1);
+                byte carryComplement = (byte) (statusRegister.isCarryFlagSet() ? 0 : 1);
                 setFlag(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
-                carryFlag = !negativeFlag;
+                statusRegister.setCarryFlag(!statusRegister.isNegativeFlagSet());
             }
 
             case ADC -> {
-                int carryValue = carryFlag ? 1: 0;
+                int carryValue = statusRegister.isCarryFlagSet() ? 1: 0;
                 int result = accumulator + value(operation.operand()) + carryValue;
                 setFlag(accumulator = (byte) (result & 0xFFFF));
-                carryFlag = result > 0xFF;
+                statusRegister.setCarryFlag(result > 0xFF);
              }
 
             //Store y register
             case STY -> pokeValue(location((Operand.AddressOperand) operation.operand()), yRegister);
 
             //Clear carry flag
-            case CLC -> carryFlag = false;
+            case CLC -> statusRegister.setCarryFlag(false);
 
             case JMP -> jump(operation.operand());
 
-            case BNE -> jumpIf(operation.operand(), !zeroFlag);
+            case BNE -> jumpIf(operation.operand(), !statusRegister.isZeroFlagSet());
 
-            case BEQ -> jumpIf(operation.operand(), zeroFlag);
+            case BEQ -> jumpIf(operation.operand(), statusRegister.isZeroFlagSet());
 
-            case BPL -> jumpIf(operation.operand(), !negativeFlag);
+            case BPL -> jumpIf(operation.operand(), !statusRegister.isNegativeFlagSet());
 
-            case BMI -> jumpIf(operation.operand(), negativeFlag);
+            case BMI -> jumpIf(operation.operand(), statusRegister.isNegativeFlagSet());
 
-            case BCS -> jumpIf(operation.operand(), carryFlag);
+            case BCS -> jumpIf(operation.operand(), statusRegister.isCarryFlagSet());
 
-            case BCC -> jumpIf(operation.operand(), !carryFlag);
+            case BCC -> jumpIf(operation.operand(), !statusRegister.isCarryFlagSet());
 
             case INX -> setFlag(++xRegister);
 
@@ -156,7 +151,7 @@ public class Processor {
 
             case DEC -> doModify((Operand.AddressOperand) operation.operand(), b -> --b);
 
-            case BRK -> this.breakFlag = true;
+            case BRK -> this.statusRegister.setBreakCommandFlag(true); //TODO: Request interrupt
 
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
@@ -212,8 +207,8 @@ public class Processor {
     }
 
     private void setFlag(byte newValue) {
-        this.zeroFlag = newValue == 0;
-        this.negativeFlag = newValue < 0;
+        this.statusRegister.setZeroFlag(newValue == 0);
+        this.statusRegister.setNegativeFlag(newValue < 0);
     }
 
     private int resolveLabel(Operand.LabelOperand labelOperand) {
@@ -383,7 +378,7 @@ public class Processor {
 
     public void run(Operand.TwoByteAddress address, int maxOperationCount) {
         setProgramCounter(address);
-        while (! breakFlag && operationCount <= maxOperationCount) {
+        while (! statusRegister.isBreakCommandFlagSet() && operationCount <= maxOperationCount) {
             step();
         }
     }
@@ -429,7 +424,8 @@ public class Processor {
 
         performOperation(operation);
 
-        fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, stackPointer, xRegister, yRegister, accumulator, zeroFlag, negativeFlag, carryFlag, breakFlag));
+        //The StatusRegister is mutable, so we put a copy in the event
+        fireEvent(new ProcessorEvent.RegisterStateChangedEvent(programCounter, stackPointer, xRegister, yRegister, accumulator, statusRegister.copy()));
     }
 
     private byte readByte() {
@@ -451,19 +447,19 @@ public class Processor {
     }
 
     public boolean isCarryFlagSet() {
-        return carryFlag;
+        return statusRegister.isCarryFlagSet();
     }
 
     public boolean isNegativeFlagSet() {
-        return negativeFlag;
+        return statusRegister.isNegativeFlagSet();
     }
 
     public boolean isZeroFlagSet() {
-        return zeroFlag;
+        return statusRegister.isZeroFlagSet();
     }
 
-    public boolean isBreakFlagSet() {
-        return breakFlag;
+    public boolean isBreakCommandFlagSet() {
+        return statusRegister.isBreakCommandFlagSet();
     }
 
     public void setProgramCounter(Operand.TwoByteAddress address) {
