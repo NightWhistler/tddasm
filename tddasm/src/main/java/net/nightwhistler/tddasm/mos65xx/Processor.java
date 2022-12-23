@@ -250,7 +250,7 @@ public class Processor {
 
     private int location(Operand.AddressOperand addressOperand) {
         return switch (addressOperand) {
-            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
+//            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
             case Operand.OneByteAddress oneByteAddress -> {
 
                 byte byteValue = oneByteAddress.byteValue();

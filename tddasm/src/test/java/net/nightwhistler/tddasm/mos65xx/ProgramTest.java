@@ -45,7 +45,7 @@ class ProgramTest {
         List<ProgramElement> elements = testProgram.elementsForLocation(address(0x8005));
         assertEquals(2, elements.size());
         assertEquals(new Label("check"), elements.get(0));
-        assertEquals(new Operation(OpCode.BNE, new Operand.LabelOperand("load_data", AddressingMode.Relative)),
+        assertEquals(new OperationProvider(OpCode.BNE, new Operand.LabelOperand("load_data", AddressingMode.Relative)),
                 elements.get(1));
     }
 

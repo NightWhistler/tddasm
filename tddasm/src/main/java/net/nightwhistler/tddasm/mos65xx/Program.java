@@ -140,19 +140,16 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
             byte[] elementData;
 
             ProgramElement element = elements.get(i);
-            if ( element instanceof Operation op && op.operand() instanceof Operand.LabelOperand lo) {
-                OpCode opCode = op.opCode();
+            if ( element instanceof OperationProvider operationProvider) {
+                //We resolve the label with an offset of +2, which is the length of the instruction itself,
+                //if relative addressing is used.
 
-                //We resolve the label with an offset of +2, which is the length of the instruction itself
-                var resolvedAddress = resolveLabel(lo, absoluteOffset.plus(2));
-                elementData = resolvedAddress
-                        .map(a -> new Operation(opCode, a).bytes())
-                        .getOrElseThrow(
-                                () -> new IllegalStateException("Cannot resolve label " + lo.label())
-                        );
-
+                Operation op = operationProvider.provide(this, absoluteOffset.plus(2));
+                elementData = op.bytes();
+            } else if (element instanceof Data data){
+                elementData = data.bytes();
             } else {
-                elementData = element.bytes();
+                elementData = new byte[0];
             }
 
             int offsetInternal = absoluteOffset.toInt() - startAddress.toInt();

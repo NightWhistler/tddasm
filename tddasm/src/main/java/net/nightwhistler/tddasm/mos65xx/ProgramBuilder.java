@@ -147,7 +147,7 @@ public class ProgramBuilder {
     }
 
     private ProgramBuilder withOperation(OpCode opCode, Operand operand) {
-        return withElement(new Operation(opCode, operand));
+        return withElement(new OperationProvider(opCode, operand));
     }
 
     private ProgramBuilder withElement(ProgramElement element) {

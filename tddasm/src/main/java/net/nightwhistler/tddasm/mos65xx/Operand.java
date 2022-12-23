@@ -2,23 +2,41 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import net.nightwhistler.ByteUtils;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import static net.nightwhistler.ByteUtils.highByte;
 import static net.nightwhistler.ByteUtils.lowByte;
 
 public sealed interface Operand {
     AddressingMode addressingMode();
 
-    default byte[] bytes() {
-        return new byte[0];
+    int length();
+
+    sealed interface ConcreteOperand extends Operand {
+        default byte[] bytes() {
+            return new byte[0];
+        }
+
+        @Override
+        default int length() {
+            return bytes().length;
+        }
+    }
+    sealed interface DynamicOperand extends Operand {
+        ConcreteOperand makeConcrete(Program program, TwoByteAddress offset);
     }
 
-    sealed interface AddressOperand extends Operand {}
+    sealed interface AddressOperand extends ConcreteOperand {
+        byte highByte();
+        byte lowByte();
+    }
 
     static NoValue noValue() {
         return NoValue.noValue();
     }
 
-    final class NoValue implements Operand {
+    final class NoValue implements ConcreteOperand {
         private NoValue() {}
         private static NoValue instance = new NoValue();
 
@@ -36,7 +54,7 @@ public sealed interface Operand {
         }
     }
 
-    record ByteValue(byte value) implements Operand {
+    record ByteValue(byte value) implements ConcreteOperand {
         @Override
         public AddressingMode addressingMode() {
             return AddressingMode.Value;
@@ -66,6 +84,14 @@ public sealed interface Operand {
             return new OneByteAddress(AddressingMode.ZeroPageAddressY, byteValue);
         }
 
+        public byte highByte() {
+            return 0;
+        }
+
+        @Override
+        public byte lowByte() {
+            return byteValue;
+        }
 
         public OneByteAddress indirectIndexedY() {
             return new OneByteAddress(AddressingMode.IndirectIndexedY, byteValue);
@@ -99,15 +125,19 @@ public sealed interface Operand {
         }
 
         public TwoByteAddress xIndexed() {
-            return new TwoByteAddress(AddressingMode.AbsoluteAddressX, lowByte, highByte);
+            return withAddressingMode(AddressingMode.AbsoluteAddressX);
         }
 
         public TwoByteAddress yIndexed() {
-            return new TwoByteAddress(AddressingMode.AbsoluteAddressY, lowByte, highByte);
+            return withAddressingMode(AddressingMode.AbsoluteAddressY);
         }
 
         public TwoByteAddress indirect() {
-            return new TwoByteAddress(AddressingMode.AbsoluteIndirect, lowByte, highByte);
+            return withAddressingMode(AddressingMode.AbsoluteIndirect);
+        }
+
+        public TwoByteAddress withAddressingMode(AddressingMode addressingMode) {
+            return new TwoByteAddress(addressingMode, lowByte, highByte);
         }
 
 
@@ -142,7 +172,22 @@ public sealed interface Operand {
         }
     }
 
-    record LabelOperand(String label, AddressingMode addressingMode) implements AddressOperand {
+    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> tranformation, int length)
+            implements DynamicOperand {
+
+        @Override
+        public AddressingMode addressingMode() {
+            return labelOperand.addressingMode();
+        }
+
+        @Override
+        public ConcreteOperand makeConcrete(Program program, TwoByteAddress offset) {
+            return tranformation.apply(labelOperand.makeConcrete(program, offset));
+        }
+
+    }
+
+    record LabelOperand(String label, AddressingMode addressingMode) implements DynamicOperand {
         public LabelOperand(String label) {
             this(label, AddressingMode.AbsoluteAddress);
         }
@@ -155,13 +200,26 @@ public sealed interface Operand {
             return new LabelOperand(label, AddressingMode.AbsoluteAddressY);
         }
 
+        public DynamicOperand lowByte() {
+            return new LabelTransformation(this, address -> value(address.lowByte()), 1);
+        }
+
+        public DynamicOperand highByte() {
+            return new LabelTransformation(this, address -> value(address.highByte()), 1);
+        }
+
         @Override
-        public byte[] bytes() {
-            if (addressingMode == AddressingMode.Relative) {
-                return new byte[1];
-            } else {
-                return new byte[2];
-            }
+        public int length() {
+            return switch (addressingMode()) {
+                case Relative -> 1;
+                default -> 2;
+            };
+        }
+
+        @Override
+        public AddressOperand makeConcrete(Program program, TwoByteAddress offset) {
+            return program.resolveLabel(this, offset)
+                    .getOrElseThrow(() -> new IllegalArgumentException("Could not find label " + label));
         }
 
         @Override

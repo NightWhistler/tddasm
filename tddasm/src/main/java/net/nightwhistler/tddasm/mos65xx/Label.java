@@ -6,9 +6,8 @@ public record Label(String name) implements ProgramElement {
     }
 
     @Override
-    public byte[] bytes() {
-        //Labels don't get translated to bytes
-        return new byte[0];
+    public int length() {
+        return 0;
     }
 
     @Override
