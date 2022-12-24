@@ -189,7 +189,8 @@ public sealed interface Operand {
         }
     }
 
-    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> transformation, int length)
+    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> transformation,
+                               int length, String stringRepresentation)
             implements VirtualOperand {
 
         @Override
@@ -218,11 +219,13 @@ public sealed interface Operand {
         }
 
         public VirtualOperand lowByte() {
-            return new LabelTransformation(this, address -> value(address.lowByte()), 1);
+            return new LabelTransformation(this, address -> value(address.lowByte()),
+                    1, "#<" + label);
         }
 
         public VirtualOperand highByte() {
-            return new LabelTransformation(this, address -> value(address.highByte()), 1);
+            return new LabelTransformation(this, address -> value(address.highByte()),
+                    1, "#>" + label);
         }
 
         @Override
@@ -241,7 +244,11 @@ public sealed interface Operand {
 
         @Override
         public String toString() {
-            return label;
+            return switch (addressingMode) {
+                case AbsoluteAddressX -> label + ",X";
+                case AbsoluteAddressY -> label + ",Y";
+                default -> label;
+            };
         }
     }
 
