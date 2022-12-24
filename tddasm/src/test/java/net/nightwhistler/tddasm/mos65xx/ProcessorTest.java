@@ -21,7 +21,7 @@ import static net.nightwhistler.tddasm.mos65xx.OpCode.SBC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.SEC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.STA;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
-import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
+import static net.nightwhistler.tddasm.mos65xx.Operand.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
@@ -329,9 +329,9 @@ class ProcessorTest {
 
         Program simpleInterruptProgram = new ProgramBuilder()
                 .sei()
-                .lda(addressOf("interrupt_routine").lowByte())
+                .lda(label("interrupt_routine").lowByte())
                 .sta(address(0x314))
-                .lda(addressOf("interrupt_routine").highByte())
+                .lda(label("interrupt_routine").highByte())
                 .sta(address(0x315))
                 .cli()
                 .lda(value(2))

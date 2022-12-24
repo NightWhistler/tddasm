@@ -6,6 +6,7 @@ import net.nightwhistler.ByteUtils;
 import java.util.function.Function;
 
 import static net.nightwhistler.ByteUtils.highByte;
+import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.ByteUtils.lowByte;
 
 public sealed interface Operand {
@@ -51,10 +52,6 @@ public sealed interface Operand {
     sealed interface AddressOperand extends ConcreteOperand {
         byte highByte();
         byte lowByte();
-    }
-
-    static NoValue noValue() {
-        return NoValue.noValue();
     }
 
     final class NoValue implements ConcreteOperand {
@@ -105,6 +102,10 @@ public sealed interface Operand {
             return new OneByteAddress(AddressingMode.ZeroPageAddressY, byteValue);
         }
 
+        public OneByteAddress indirectIndexedY() {
+            return new OneByteAddress(AddressingMode.IndirectIndexedY, byteValue);
+        }
+
         public byte highByte() {
             return 0;
         }
@@ -112,10 +113,6 @@ public sealed interface Operand {
         @Override
         public byte lowByte() {
             return byteValue;
-        }
-
-        public OneByteAddress indirectIndexedY() {
-            return new OneByteAddress(AddressingMode.IndirectIndexedY, byteValue);
         }
 
         @Override
@@ -161,14 +158,13 @@ public sealed interface Operand {
             return new TwoByteAddress(addressingMode, lowByte, highByte);
         }
 
-
         @Override
         public byte[] bytes() {
             return new byte[]{ lowByte, highByte };
         }
 
         public int toInt() {
-            return ByteUtils.littleEndianBytesToInt(lowByte, highByte);
+            return littleEndianBytesToInt(lowByte, highByte);
         }
 
         public TwoByteAddress plus(int offset) {
@@ -193,7 +189,7 @@ public sealed interface Operand {
         }
     }
 
-    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> tranformation, int length)
+    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> transformation, int length)
             implements VirtualOperand {
 
         @Override
@@ -203,7 +199,7 @@ public sealed interface Operand {
 
         @Override
         public ConcreteOperand resolve(Program program, TwoByteAddress offset) {
-            return tranformation.apply(labelOperand.resolve(program, offset));
+            return transformation.apply(labelOperand.resolve(program, offset));
         }
 
     }
@@ -249,7 +245,7 @@ public sealed interface Operand {
         }
     }
 
-    static LabelOperand addressOf(String label) {
+    static LabelOperand label(String label) {
         return new LabelOperand(label);
     }
 
@@ -266,6 +262,10 @@ public sealed interface Operand {
 
     static OneByteAddress zeroPage(int value) {
         return new OneByteAddress(AddressingMode.ZeroPageAddress, (byte) value);
+    }
+
+    static NoValue noValue() {
+        return NoValue.noValue();
     }
 
 }

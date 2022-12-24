@@ -1,8 +1,5 @@
 package net.nightwhistler.tddasm.examples;
 
-import net.nightwhistler.ByteUtils;
-import net.nightwhistler.tddasm.c64.kernal.ChrOut;
-import net.nightwhistler.tddasm.c64.kernal.ClearScreen;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 import net.nightwhistler.tddasm.util.ProgramWriter;
@@ -12,12 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import static net.nightwhistler.ByteUtils.bytes;
 import static net.nightwhistler.tddasm.c64.kernal.ChrOut.CHROUT_ADDRESS;
 import static net.nightwhistler.tddasm.c64.kernal.ClearScreen.CLR_SCREEN_ADDRESS;
-import static net.nightwhistler.tddasm.mos65xx.Label.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
-import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
+import static net.nightwhistler.tddasm.mos65xx.Operand.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 public class HelloWorld {
@@ -56,7 +51,7 @@ public class HelloWorld {
                       .label("draw_text")
                         .lda(value(0x00))
                       .label("draw_loop")
-                        .lda(addressOf("msg").xIndexed())
+                        .lda(label("msg").xIndexed())
                         .sta(address(0x05e0).xIndexed())
                         .inx()
                         .cpx(value(0x28))
@@ -95,7 +90,7 @@ public class HelloWorld {
                 .jsr(CLR_SCREEN_ADDRESS)  //$e5ff, unofficial but used a lot
                 .lda(value(0x00))
             .label("write")
-                .lda(addressOf("hello").xIndexed())
+                .lda(label("hello").xIndexed())
                 .jsr(CHROUT_ADDRESS) //$FFD2
                 .inx()
                 .cpx(value(0x0B))
