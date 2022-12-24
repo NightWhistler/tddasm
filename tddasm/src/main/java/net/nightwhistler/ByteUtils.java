@@ -33,6 +33,10 @@ public class ByteUtils {
         return new byte[]{byte0, byte1, byte2, byte3};
     }
 
+    public static int toInt(boolean b) {
+        return b ? 1: 0;
+    }
+
     public static int littleEndianBytesToInt(byte... values) {
         int result = 0;
 

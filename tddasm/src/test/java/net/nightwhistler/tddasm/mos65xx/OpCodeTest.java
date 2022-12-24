@@ -51,4 +51,24 @@ class OpCodeTest {
                 OpCode.findByByteValue(codeJMP));
     }
 
+    @Test
+    public void testNoUnimplementedCodes() {
+        Processor processor = new Processor();
+
+        for (OpCode opCode: OpCode.values()) {
+            if (! opCode.isIllegal() ) {
+                try {
+                    AddressingMode firstAddressingMode = opCode.addressingModeMappings().get(0).addressingMode();
+                    Operand.ConcreteOperand operand = firstAddressingMode.toOperand(new byte[firstAddressingMode.size()]);
+
+                    Operation operation = new Operation(opCode, operand);
+                    processor.performOperation(operation);
+                } catch (Exception e) {
+                    fail("OpCode " + opCode + " should either be implemented or declared illegal.", e);
+                }
+            }
+        }
+
+    }
+
 }

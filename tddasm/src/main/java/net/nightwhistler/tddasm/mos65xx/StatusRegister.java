@@ -1,5 +1,7 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import static net.nightwhistler.ByteUtils.toInt;
+
 public class StatusRegister {
 
     StatusRegister() {}
@@ -56,10 +58,6 @@ public class StatusRegister {
         breakCommandFlag = (value & 0b10000) > 0;
         overFlowFlag = (value & 0b1000000) > 0;
         negativeFlag = (value & 0b10000000) > 0;
-    }
-
-    private static int toInt(boolean b) {
-        return b ? 1: 0;
     }
 
     public void setCarryFlag(boolean carryFlag) {
