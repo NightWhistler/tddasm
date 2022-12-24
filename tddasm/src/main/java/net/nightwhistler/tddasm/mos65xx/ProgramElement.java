@@ -1,9 +1,6 @@
 package net.nightwhistler.tddasm.mos65xx;
 
-public sealed interface ProgramElement permits Data, Label, Operation {
-    byte[] bytes();
+public sealed interface ProgramElement permits Data, Label, OperationProvider {
 
-    default int length() {
-        return bytes().length;
-    }
+    int length();
 }

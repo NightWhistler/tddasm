@@ -1,24 +1,60 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import io.vavr.control.Option;
 import net.nightwhistler.ByteUtils;
 
+import java.util.function.Function;
+
 import static net.nightwhistler.ByteUtils.highByte;
+import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
 import static net.nightwhistler.ByteUtils.lowByte;
 
 public sealed interface Operand {
     AddressingMode addressingMode();
 
-    default byte[] bytes() {
-        return new byte[0];
+    int length();
+
+    /**
+     * A ConcreteOperand is an Operand that has all the needed
+     * information to be compiled into bytes.
+     */
+    sealed interface ConcreteOperand extends Operand {
+        default byte[] bytes() {
+            return new byte[0];
+        }
+
+        @Override
+        default int length() {
+            return bytes().length;
+        }
     }
 
-    sealed interface AddressOperand extends Operand {}
+    /**
+     * A VirtualOperand is an Operand that first
+     * needs to be reolved into a ConcreteOperand
+     * before it can be compiled. This is mostly
+     * meant for labels.
+     */
+    sealed interface VirtualOperand extends Operand {
 
-    static NoValue noValue() {
-        return NoValue.noValue();
+        /**
+         * Resolves this VirtualOperand into a concrete one.
+         *
+         * This generally means translating a label into an address.
+         *
+         * @param program the Program to resolve in
+         * @param offset the offset inside this program to resolve relative to.
+         * @return a ConcreteOperand which can be compiled.
+         */
+        ConcreteOperand resolve(Program program, TwoByteAddress offset);
     }
 
-    final class NoValue implements Operand {
+    sealed interface AddressOperand extends ConcreteOperand {
+        byte highByte();
+        byte lowByte();
+    }
+
+    final class NoValue implements ConcreteOperand {
         private NoValue() {}
         private static NoValue instance = new NoValue();
 
@@ -36,7 +72,7 @@ public sealed interface Operand {
         }
     }
 
-    record ByteValue(byte value) implements Operand {
+    record ByteValue(byte value) implements ConcreteOperand {
         @Override
         public AddressingMode addressingMode() {
             return AddressingMode.Value;
@@ -66,9 +102,17 @@ public sealed interface Operand {
             return new OneByteAddress(AddressingMode.ZeroPageAddressY, byteValue);
         }
 
-
         public OneByteAddress indirectIndexedY() {
             return new OneByteAddress(AddressingMode.IndirectIndexedY, byteValue);
+        }
+
+        public byte highByte() {
+            return 0;
+        }
+
+        @Override
+        public byte lowByte() {
+            return byteValue;
         }
 
         @Override
@@ -99,11 +143,19 @@ public sealed interface Operand {
         }
 
         public TwoByteAddress xIndexed() {
-            return new TwoByteAddress(AddressingMode.AbsoluteAddressX, lowByte, highByte);
+            return withAddressingMode(AddressingMode.AbsoluteAddressX);
         }
 
         public TwoByteAddress yIndexed() {
-            return new TwoByteAddress(AddressingMode.AbsoluteAddressY, lowByte, highByte);
+            return withAddressingMode(AddressingMode.AbsoluteAddressY);
+        }
+
+        public TwoByteAddress indirect() {
+            return withAddressingMode(AddressingMode.AbsoluteIndirect);
+        }
+
+        public TwoByteAddress withAddressingMode(AddressingMode addressingMode) {
+            return new TwoByteAddress(addressingMode, lowByte, highByte);
         }
 
         @Override
@@ -112,12 +164,16 @@ public sealed interface Operand {
         }
 
         public int toInt() {
-            return ByteUtils.littleEndianBytesToInt(lowByte, highByte);
+            return littleEndianBytesToInt(lowByte, highByte);
         }
 
         public TwoByteAddress plus(int offset) {
             int newAddress = toInt() + offset;
             return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
+        }
+
+        public TwoByteAddress increment() {
+            return plus(1);
         }
 
         @Override
@@ -133,7 +189,23 @@ public sealed interface Operand {
         }
     }
 
-    record LabelOperand(String label, AddressingMode addressingMode) implements AddressOperand {
+    record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> transformation,
+                               int length, String stringRepresentation)
+            implements VirtualOperand {
+
+        @Override
+        public AddressingMode addressingMode() {
+            return labelOperand.addressingMode();
+        }
+
+        @Override
+        public ConcreteOperand resolve(Program program, TwoByteAddress offset) {
+            return transformation.apply(labelOperand.resolve(program, offset));
+        }
+
+    }
+
+    record LabelOperand(String label, AddressingMode addressingMode) implements VirtualOperand {
         public LabelOperand(String label) {
             this(label, AddressingMode.AbsoluteAddress);
         }
@@ -146,22 +218,41 @@ public sealed interface Operand {
             return new LabelOperand(label, AddressingMode.AbsoluteAddressY);
         }
 
+        public VirtualOperand lowByte() {
+            return new LabelTransformation(this, address -> value(address.lowByte()),
+                    1, "#<" + label);
+        }
+
+        public VirtualOperand highByte() {
+            return new LabelTransformation(this, address -> value(address.highByte()),
+                    1, "#>" + label);
+        }
+
         @Override
-        public byte[] bytes() {
-            if (addressingMode == AddressingMode.Relative) {
-                return new byte[1];
-            } else {
-                return new byte[2];
-            }
+        public int length() {
+            return switch (addressingMode()) {
+                case Relative -> 1;
+                default -> 2;
+            };
+        }
+
+        @Override
+        public AddressOperand resolve(Program program, TwoByteAddress offset) {
+            return Option.of(program).flatMap(p -> p.resolveLabel(this, offset))
+                    .getOrElseThrow(() -> new IllegalArgumentException("Could not find label " + label));
         }
 
         @Override
         public String toString() {
-            return label;
+            return switch (addressingMode) {
+                case AbsoluteAddressX -> label + ",X";
+                case AbsoluteAddressY -> label + ",Y";
+                default -> label;
+            };
         }
     }
 
-    static LabelOperand addressOf(String label) {
+    static LabelOperand label(String label) {
         return new LabelOperand(label);
     }
 
@@ -178,6 +269,10 @@ public sealed interface Operand {
 
     static OneByteAddress zeroPage(int value) {
         return new OneByteAddress(AddressingMode.ZeroPageAddress, (byte) value);
+    }
+
+    static NoValue noValue() {
+        return NoValue.noValue();
     }
 
 }

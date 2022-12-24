@@ -1,10 +1,13 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
+import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
+import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 
 public class ProgramBuilder {
     private List<ProgramElement> programElements = List.empty();
@@ -26,6 +29,10 @@ public class ProgramBuilder {
         return new ProgramBuilder(this.programElements.appendAll(elements));
     }
 
+    public ProgramBuilder include(ProgramBuilder other) {
+        return include(other.buildElements());
+    }
+
     public ProgramBuilder label(String label) {
         return withElement(new Label(label));
     }
@@ -35,23 +42,22 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder screenCodes(String text) {
-        byte[] ascii = text.getBytes(Charset.forName("ASCII"));
-        byte[] petscii = new byte[ascii.length];
-        for (int i =0; i < ascii.length; i++ ) {
-            byte a = ascii[i];
-            byte p;
-
-            if (a >= 97 && a < 122 ) {
-                p = (byte) (a - 96);
-            } else {
-                p = a;
-            }
-
-            petscii[i] = p;
-        }
-
-        return data(petscii);
+        byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
+        return data(ScreenCode.toScreenCodes(ascii));
     }
+
+    public ProgramBuilder adc(Operand operand) {
+        return withOperation(OpCode.ADC, operand);
+    }
+
+    public ProgramBuilder sei() {
+        return withOperation(OpCode.SEI, noValue());
+    }
+
+    public ProgramBuilder cli() {
+        return withOperation(OpCode.CLI, noValue());
+    }
+
 
     public ProgramBuilder data(byte[] data) {
         return withElement(new Data(data));
@@ -65,8 +71,11 @@ public class ProgramBuilder {
         return withOperation(OpCode.LDX, operand);
     }
 
+    public ProgramBuilder stx(Operand operand) {
+        return withOperation(OpCode.STX, operand);
+    }
     public ProgramBuilder dex() {
-        return withOperation(OpCode.DEX, Operand.noValue());
+        return withOperation(OpCode.DEX, noValue());
     }
 
     public ProgramBuilder sta(Operand operand) {
@@ -74,7 +83,11 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder rts() {
-        return withOperation(OpCode.RTS, Operand.noValue());
+        return withOperation(OpCode.RTS, noValue());
+    }
+
+    public ProgramBuilder rti() {
+        return withOperation(OpCode.RTI, noValue());
     }
 
     public ProgramBuilder sty(Operand operand) {
@@ -82,11 +95,11 @@ public class ProgramBuilder {
     }
 
     public ProgramBuilder iny() {
-        return withOperation(OpCode.INY, Operand.noValue());
+        return withOperation(OpCode.INY, noValue());
     }
 
     public ProgramBuilder inx() {
-        return withOperation(OpCode.INX, Operand.noValue());
+        return withOperation(OpCode.INX, noValue());
     }
 
     public ProgramBuilder ldy(Operand operand) {
@@ -117,6 +130,10 @@ public class ProgramBuilder {
         return withOperation(OpCode.BNE, new Operand.LabelOperand(label, Relative));
     }
 
+    public ProgramBuilder inc(Operand operand) {
+        return withOperation(OpCode.INC, operand);
+    }
+
     public ProgramBuilder cpx(Operand operand) {
         return withOperation(OpCode.CPX, operand);
     }
@@ -130,7 +147,7 @@ public class ProgramBuilder {
     }
 
     private ProgramBuilder withOperation(OpCode opCode, Operand operand) {
-        return withElement(new Operation(opCode, operand));
+        return withElement(new OperationProvider(opCode, operand));
     }
 
     private ProgramBuilder withElement(ProgramElement element) {

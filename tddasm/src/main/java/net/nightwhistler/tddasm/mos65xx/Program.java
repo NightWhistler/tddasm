@@ -62,8 +62,6 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
             case AbsoluteAddressY -> resolveLabelAbsolute(labelOperand.label()).map(Operand.TwoByteAddress::yIndexed);
 
-            //The plus 2 is because the address is relative to the program counter _after_
-            //reading the relative jump instruction itself, which is 2 bytes long.
             case Relative -> resolveLabelRelativeTo(labelOperand.label(), offset)
                     .map(b -> new Operand.OneByteAddress(AddressingMode.Relative, b));
 
@@ -140,19 +138,14 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
             byte[] elementData;
 
             ProgramElement element = elements.get(i);
-            if ( element instanceof Operation op && op.operand() instanceof Operand.LabelOperand lo) {
-                OpCode opCode = op.opCode();
-
-                //We resolve the label with an offset of +2, which is the length of the instruction itself
-                var resolvedAddress = resolveLabel(lo, absoluteOffset.plus(2));
-                elementData = resolvedAddress
-                        .map(a -> new Operation(opCode, a).bytes())
-                        .getOrElseThrow(
-                                () -> new IllegalStateException("Cannot resolve label " + lo.label())
-                        );
-
+            if ( element instanceof OperationProvider operationProvider) {
+                //All relative values are calculated with the offset _after_ the instruction
+                Operation op = operationProvider.provide(this, absoluteOffset.plus(operationProvider.length()));
+                elementData = op.bytes();
+            } else if (element instanceof Data data){
+                elementData = data.bytes();
             } else {
-                elementData = element.bytes();
+                elementData = new byte[0];
             }
 
             int offsetInternal = absoluteOffset.toInt() - startAddress.toInt();

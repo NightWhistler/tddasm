@@ -17,7 +17,7 @@ class ProgramBuilderTest {
                 .buildElements();
 
         assertEquals(1, elements.size());
-        assertEquals(new Operation(OpCode.LDA, new Operand.ByteValue((byte) 0x03)), elements.get(0));
+        assertEquals(new OperationProvider(OpCode.LDA, new Operand.ByteValue((byte) 0x03)), elements.get(0));
     }
 
     @Test
@@ -32,11 +32,11 @@ class ProgramBuilderTest {
 
         assertEquals(5, elements.size());
         assertEquals(List.of(
-                new Operation(OpCode.LDA, new Operand.ByteValue((byte) 0x03)),
+                new OperationProvider(OpCode.LDA, new Operand.ByteValue((byte) 0x03)),
                 new Label("some_label"),
-                new Operation(OpCode.INY, Operand.noValue()),
-                new Operation(OpCode.JSR, new Operand.LabelOperand("print_y")),
-                new Operation(OpCode.JMP, new Operand.TwoByteAddress(AddressingMode.AbsoluteAddress, (byte) 0x67, (byte) 0x45))
+                new OperationProvider(OpCode.INY, Operand.noValue()),
+                new OperationProvider(OpCode.JSR, new Operand.LabelOperand("print_y")),
+                new OperationProvider(OpCode.JMP, new Operand.TwoByteAddress(AddressingMode.AbsoluteAddress, (byte) 0x67, (byte) 0x45))
         ), elements);
     }
 

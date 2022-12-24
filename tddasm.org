@@ -2,8 +2,8 @@
 
 * DONE Very, very, _very_ basic processor
 * DONE Enum with all the mnemonics
-* TODO Add byte-count and cycle-count to each Operation
-* TODO Be able to load a program
+* DONE Add byte-count and cycle-count to each Operation
+* DONE Be able to load a program
   There are some tricky things to consider there. I could stay very close to
   the real CPU and convert all the opertions to bytes, load those into memory
   and then when executing them parse them back into Operations.
@@ -19,7 +19,34 @@
   disallows self-modifying code. If it's allowed we'd try to parse the bytes
   in case of a mismatch and update the Program that we've stored, if it's not
   set we'd throw an exception when there is a mismatch.
+* DONE Create a StatusRegister class
+     - Move all the current boolean flags into a class
+     - This class has a toByte() method which puts all the flags in the proper
+       bits
+     - Has a static method to create a StatusRegister instance from a byte
+     - Has a toBit(boolean) method → true = 1, false = 0
+     - Builds the byte by bit-shifting
+* DONE Figure out how to support interrupts
+* TODO Create a Compiler class that scans for annotated classes
+  It should then compile them and put the output in target/mos62xx
+* TODO Create a parser for .asm files
+  Should be able to just be a simple regex-pased tokenizer.
+* TODO Add a keyboard class
+  It should wrap the Processor and have an internal buffer of keypresses.
+   - Calling pressKey(key) should add a byte to the internal buffer.
+   - Add a SCANKEY kernal routine to read a byte from the buffer into memory
+* TODO Create a test to scan for unimplemented OpCodes
+   - Loop through all the opcodes
+   - If the OpCode has isIllegal() = true, skip it.
+   - grab the first available AddressingMode and use that to creat an
+     Operation
+   - Run that operation on the Processor, make sure no Exception is thrown.
+   - Error message: "Operations should either be implemented or declared
+     illegal"
+
 * TODO Create a Maven code generation plugin.
-  This should take simple .asm files and generate Java code that calls the
-  ProgramBuilder.
-* TODO Figure out how to support interrupts
+  Once we have the compiler class it's a matter of simply calling that (I
+  hope!)
+* TODO Allow binary data as .*.
+  This allows nicer ways of entering sprites visually and can fairly easily
+  be parsed to byte values.

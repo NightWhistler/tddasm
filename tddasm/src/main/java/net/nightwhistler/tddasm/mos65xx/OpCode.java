@@ -2,6 +2,7 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
 import io.vavr.control.Option;
+import io.vavr.control.Try;
 
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddress;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.AbsoluteAddressX;
@@ -20,44 +21,107 @@ import static net.nightwhistler.tddasm.mos65xx.AddressingMode.ZeroPageAddressY;
  *
  */
 public enum OpCode {
-    ADC,
+    ADC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    OpCode.mode(this, Value, 0x69),
+                    OpCode.mode(this, AbsoluteAddress, 0x6D),
+                    OpCode.mode(this, AbsoluteAddressX, 0x7D),
+                    OpCode.mode(this, AbsoluteAddressY, 0x79),
+                    OpCode.mode(this, ZeroPageAddress, 0x65),
+                    OpCode.mode(this, ZeroPageAddressX, 0x75),
+                    OpCode.mode(this, IndexedIndirectX, 0x61),
+                    OpCode.mode(this, IndexedIndirectX, 0x71)
+            );
+        }
+    },
     ALR,
     ANC,
-    AND,
+    AND {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Value, 0x29),
+                    mode(this, AbsoluteAddress, 0x2D),
+                    mode(this, AbsoluteAddressX, 0x3D),
+                    mode(this, AbsoluteAddressY, 0x39),
+                    mode(this, ZeroPageAddress, 0x25),
+                    mode(this, ZeroPageAddressX, 0x35),
+                    mode(this, IndexedIndirectX, 0x21),
+                    mode(this, IndirectIndexedY, 0x31)
+            );
+        }
+    },
     ANE,
     ARR,
     ASL,
-    BCC,
-    BCS,
-    BEQ,
+    BCC {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x90));
+        }
+    },
+    BCS {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0xB0));
+        }
+    },
+    BEQ {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0xF0));
+        }
+    },
     BIT,
-    BMI,
+    BMI {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x30));
+        }
+    },
     BNE {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(AddressingMode.Relative, 0xD0));
+            return List.of(mode(this,AddressingMode.Relative, 0xD0));
         }
     },
-    BPL,
-    BRK,
+    BPL {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,AddressingMode.Relative, 0x10));
+        }
+    },
+    BRK {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x00));
+        }
+    },
     BVC,
     BVS,
-    CLC,
+    CLC {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x18));
+        }
+    },
     CLD,
-    CLI,
+    CLI {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x58));
+        }
+    },
     CLV,
     CMP {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(Value, 0xC9),
-                    mode(AbsoluteAddress, 0xCD),
-                    mode(AbsoluteAddressX, 0xDD),
-                    mode(AbsoluteAddressY, 0xD9),
-                    mode(ZeroPageAddress, 0xC5),
-                    mode(ZeroPageAddressX, 0xD5),
-                    mode(IndexedIndirectX, 0xC1),
-                    mode(IndirectIndexedY, 0xD1)
+                    mode(this,Value, 0xC9),
+                    mode(this,AbsoluteAddress, 0xCD),
+                    mode(this,AbsoluteAddressX, 0xDD),
+                    mode(this,AbsoluteAddressY, 0xD9),
+                    mode(this,ZeroPageAddress, 0xC5),
+                    mode(this,ZeroPageAddressX, 0xD5),
+                    mode(this,IndexedIndirectX, 0xC1),
+                    mode(this,IndirectIndexedY, 0xD1)
             );
         }
     },
@@ -65,33 +129,67 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(Value, 0xE0),
-                    mode(AbsoluteAddress, 0xEC),
-                    mode(ZeroPageAddress, 0xE4)
+                    mode(this,Value, 0xE0),
+                    mode(this,AbsoluteAddress, 0xEC),
+                    mode(this,ZeroPageAddress, 0xE4)
             );
         }
     },
-    CPY,
+    CPY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AddressingMode.Value, 0xC0),
+                    mode(this, AbsoluteAddress, 0xCC),
+                    mode(this, ZeroPageAddress, 0xC4)
+                );
+        }
+    },
     DCP,
-    DEC,
+    DEC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AbsoluteAddress, 0xCE),
+                    mode(this,AbsoluteAddressX, 0xDE),
+                    mode(this,ZeroPageAddress, 0xC6),
+                    mode(this,ZeroPageAddressX, 0xD6)
+            );
+        }
+    },
     DEX {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(Implied, 0xCA));
+            return List.of(mode(this,Implied, 0xCA));
         }
     },
-    DEY,
+    DEY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,Implied, 0x88));
+        }
+    },
     EOR,
-    INC,
+    INC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this,AbsoluteAddress, 0xEE),
+                    mode(this,AbsoluteAddressX, 0xFE),
+                    mode(this,ZeroPageAddress, 0xE6),
+                    mode(this,ZeroPageAddressX, 0xF6)
+            );
+        }
+    },
     INX {
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(Implied, 0xE8));
+            return List.of(mode(this,Implied, 0xE8));
         }
     },
     INY {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(Implied, 0xC8));
+            return List.of(mode(this,Implied, 0xC8));
         }
     },
     ISC,
@@ -100,15 +198,15 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(AbsoluteAddress, 0x4C),
-                    mode(AbsoluteIndirect, 0x6C)
+                    mode(this,AbsoluteAddress, 0x4C),
+                    mode(this,AbsoluteIndirect, 0x6C)
             );
         }
     },
     JSR {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(AbsoluteAddress, 0x20));
+            return List.of(mode(this,AbsoluteAddress, 0x20));
         }
     },
     LAS,
@@ -117,14 +215,14 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(Value, 0xA9),
-                    mode(AbsoluteAddress, 0xAD),
-                    mode(AbsoluteAddressX, 0xBD),
-                    mode(AbsoluteAddressY, 0xB9),
-                    mode(ZeroPageAddress, 0xA5),
-                    mode(ZeroPageAddressX, 0xB5),
-                    mode(IndexedIndirectX, 0xA1),
-                    mode(IndirectIndexedY, 0xB1)
+                    mode(this,Value, 0xA9),
+                    mode(this,AbsoluteAddress, 0xAD),
+                    mode(this,AbsoluteAddressX, 0xBD),
+                    mode(this,AbsoluteAddressY, 0xB9),
+                    mode(this,ZeroPageAddress, 0xA5),
+                    mode(this,ZeroPageAddressX, 0xB5),
+                    mode(this,IndexedIndirectX, 0xA1),
+                    mode(this,IndirectIndexedY, 0xB1)
             );
         }
     },
@@ -132,11 +230,11 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(Value, 0xA2),
-                    mode(AbsoluteAddress, 0xAE),
-                    mode(AbsoluteAddressY, 0xBE),
-                    mode(ZeroPageAddress, 0xA6),
-                    mode(ZeroPageAddressY, 0xB6)
+                    mode(this,Value, 0xA2),
+                    mode(this,AbsoluteAddress, 0xAE),
+                    mode(this,AbsoluteAddressY, 0xBE),
+                    mode(this,ZeroPageAddress, 0xA6),
+                    mode(this,ZeroPageAddressY, 0xB6)
             );
         }
     },
@@ -144,38 +242,96 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(Value, 0xA0),
-                    mode(AbsoluteAddress, 0xAC),
-                    mode(AbsoluteAddressX, 0xBC),
-                    mode(ZeroPageAddress, 0xA4),
-                    mode(ZeroPageAddressX, 0xB4)
+                    mode(this,Value, 0xA0),
+                    mode(this,AbsoluteAddress, 0xAC),
+                    mode(this,AbsoluteAddressX, 0xBC),
+                    mode(this,ZeroPageAddress, 0xA4),
+                    mode(this,ZeroPageAddressX, 0xB4)
             );
         }
     },
     LSR,
     NOP,
-    ORA,
-    PHA,
-    PHP,
-    PLA,
+    ORA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Value, 0x09),
+                    mode(this, AbsoluteAddress, 0x0D),
+                    mode(this, AbsoluteAddressX, 0x1D),
+                    mode(this, AbsoluteAddressY, 0x19),
+                    mode(this, ZeroPageAddress, 0x05),
+                    mode(this, ZeroPageAddressX, 0x15),
+                    mode(this, IndexedIndirectX, 0x01),
+                    mode(this, IndirectIndexedY, 0x11)
+            );
+        }
+    },
+    PHA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x48));
+        }
+    },
+    PHP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x08));
+        }
+    },
+    PLA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x68));
+        }
+    },
     PLP,
     RLA,
     ROL,
     ROR,
     RRA,
-    RTI,
+    RTI {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this,Implied, 0x40));
+        }
+    },
     RTS {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
-            return List.of(mode(Implied, 0x60));
+            return List.of(mode(this,Implied, 0x60));
         }
     },
-    SAX,
-    SBC,
+    SAX, //Illegal
+    SBC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    OpCode.mode(this, Value, 0xE9),
+                    OpCode.mode(this, Value, 0xEB), //This has 2 codes for the same mode
+                    OpCode.mode(this, AbsoluteAddress, 0xED),
+                    OpCode.mode(this, AbsoluteAddressX, 0xFD),
+                    OpCode.mode(this, AbsoluteAddressY, 0xF9),
+                    OpCode.mode(this, ZeroPageAddress, 0xE5),
+                    OpCode.mode(this, ZeroPageAddressX, 0xF5),
+                    OpCode.mode(this, IndexedIndirectX, 0xE1),
+                    OpCode.mode(this, IndexedIndirectX, 0xF1)
+            );
+        }
+    },
     SBX,
-    SEC,
+    SEC {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x38));
+        }
+    },
     SED,
-    SEI,
+    SEI {
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x78));
+        }
+    },
     SHA,
     SHX,
     SHY,
@@ -185,13 +341,13 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(AbsoluteAddress, 0x8D),
-                    mode(AbsoluteAddressX,0x9D),
-                    mode(AbsoluteAddressY, 0x99),
-                    mode(ZeroPageAddress , 0x85),
-                    mode(ZeroPageAddressX , 0x95),
-                    mode(IndexedIndirectX , 0x81),
-                    mode(IndirectIndexedY , 0x91)
+                    mode(this,AbsoluteAddress, 0x8D),
+                    mode(this,AbsoluteAddressX,0x9D),
+                    mode(this,AbsoluteAddressY, 0x99),
+                    mode(this,ZeroPageAddress , 0x85),
+                    mode(this,ZeroPageAddressX , 0x95),
+                    mode(this,IndexedIndirectX , 0x81),
+                    mode(this,IndirectIndexedY , 0x91)
             );
         }
     },
@@ -199,9 +355,9 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(AbsoluteAddress, 0x8E),
-                    mode(ZeroPageAddress, 0x86),
-                    mode(ZeroPageAddressY, 0x96)
+                    mode(this,AbsoluteAddress, 0x8E),
+                    mode(this,ZeroPageAddress, 0x86),
+                    mode(this,ZeroPageAddressY, 0x96)
             );
         }
     },
@@ -210,24 +366,67 @@ public enum OpCode {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
             return List.of(
-                    mode(AbsoluteAddress, 0x8C),
-                    mode(ZeroPageAddress, 0x84),
-                    mode(ZeroPageAddressX, 0x94)
+                    mode(this,AbsoluteAddress, 0x8C),
+                    mode(this,ZeroPageAddress, 0x84),
+                    mode(this,ZeroPageAddressX, 0x94)
             );
         }
     },
-    TAS,
-    TAX,
-    TAY,
-    TSX,
-    TXA,
-    TXS,
-    TYA;
+    TAS, //Illegal
+    TAX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xAA));
+        }
+    },
+    TAY {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xA8));
+        }
+    },
+    TSX {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xBA));
+        }
+    },
+    TXA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x8A));
+        }
+    },
+    TXS {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x9A));
+        }
+    },
+    TYA {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x98));
+        }
+    };
 
-    public Option<Byte> codeForAddressingMode(AddressingMode addressingMode) {
+    public Option<AdressingModeMapping> findByAddressingMode(AddressingMode addressingMode) {
         return addressingModeMappings()
-                .find(m -> m.addressingMode == addressingMode)
-                .map(AdressingModeMapping::code);
+                .find(m -> m.addressingMode == addressingMode);
+    }
+
+    private static java.util.HashMap<Byte, OpCode.AdressingModeMapping> mappings = null;
+
+    public static Option<AdressingModeMapping> findByByteValue(byte value) {
+        if (mappings == null) {
+            mappings = new java.util.HashMap<>();
+            List.of(values()).flatMap(opCode ->
+                Try.of(() -> opCode.addressingModeMappings()).getOrElse(List.empty())).forEach( m ->
+                    mappings.put(m.code, m)
+            );
+        }
+
+        return Option.of(mappings.get(value));
     }
 
     public boolean supportAddressingMode(AddressingMode addressingMode) {
@@ -235,13 +434,13 @@ public enum OpCode {
                 .contains(addressingMode);
     }
 
-    private static AdressingModeMapping mode(AddressingMode addressingMode, int byteValue) {
-        return new AdressingModeMapping(addressingMode, (byte) byteValue);
+    private static AdressingModeMapping mode(OpCode opCode, AddressingMode addressingMode, int byteValue) {
+        return new AdressingModeMapping(opCode, addressingMode, (byte) byteValue);
     }
 
     public List<AdressingModeMapping> addressingModeMappings() {
         throw new UnsupportedOperationException(String.format("OpCode %s has no addressing modes. This means it's either illegal or not yet implemented.", this));
     }
 
-    record AdressingModeMapping(AddressingMode addressingMode, byte code){}
+    record AdressingModeMapping(OpCode opCode, AddressingMode addressingMode, byte code){}
 }

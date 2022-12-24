@@ -6,6 +6,9 @@ import io.vavr.control.Try;
 import org.junit.jupiter.api.Test;
 
 
+import static io.vavr.control.Option.some;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.LDA;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpCodeTest {
@@ -34,6 +37,18 @@ class OpCodeTest {
                     )
             );
         }
+    }
+
+    @Test
+    public void testFindCode() {
+       byte codeLDA = (byte) 0xA9;
+       byte codeJMP = (byte) 0x4C;
+
+       assertEquals(some(new OpCode.AdressingModeMapping(LDA, AddressingMode.Value, codeLDA)),
+               OpCode.findByByteValue(codeLDA));
+
+        assertEquals(some(new OpCode.AdressingModeMapping(JMP, AddressingMode.AbsoluteAddress, codeJMP)),
+                OpCode.findByByteValue(codeJMP));
     }
 
 }

@@ -4,7 +4,6 @@ import io.vavr.collection.List;
 import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
-import net.nightwhistler.tddasm.mos65xx.ProgramElement;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
@@ -12,16 +11,15 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
 @CompileProgram("clr_bitmap.prg")
 public class ClearBitmapMemory {
-
-    private static final int VIC_REG_1=0xD011;
-    private static final int VIC_REG_2=0xD016;
-    private static final int VIC_BITMAP_VECTOR=0xD018;
-    private static final int BITMAP_DATA_START=0x2000;
-    private static final Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
-    private static final Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
-    private static final Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
-    private static final int KERNAL_CLEAR_SCR=0x544;
-    private static final Operand.ByteValue CLEAR_VALUE=value(0x0F);
+    private static int VIC_REG_1=0xD011;
+    private static int VIC_REG_2=0xD016;
+    private static int VIC_BITMAP_VECTOR=0xD018;
+    private static Operand.TwoByteAddress BITMAP_DATA_START=address(0x2000);
+    private static Operand.TwoByteAddress BITMAP_DATA_END= address(0x3F3F);
+    private static Operand.OneByteAddress MEM_VECTOR_LOW=zeroPage(0xFB);
+    private static Operand.OneByteAddress MEM_VECTOR_HIGH=zeroPage(0xFC);
+    int KERNAL_CLEAR_SCR=0x544;
+    private static Operand.ByteValue CLEAR_VALUE=value(0x0F);
 
 
     /**
@@ -67,33 +65,33 @@ public class ClearBitmapMemory {
      *
     */
 
-    static List<ProgramElement> fillMemory() {
+    static ProgramBuilder clearBitmapMemory() {
 
         //This is a subroutine to clear 8000 memory addresses,
         return new ProgramBuilder().
               label("fill_memory")
+                .ldx(value(BITMAP_DATA_START.lowByte()))
+                .stx(MEM_VECTOR_LOW)
+                .ldx(value(BITMAP_DATA_START.highByte()))
+                .stx(MEM_VECTOR_HIGH)
                 .ldy(value(0x00)) // Start Y register at 0
-              .label("outer_loop")
                 .lda(CLEAR_VALUE)
               .label("inner_loop")
                 // We store in the low byte of the memory vector, but the instruction will also
                 // read the next (high) byte
                 .sta(MEM_VECTOR_LOW.indirectIndexedY())
                 .iny() //We increase y, until it rolls over to 0
-                .beq("loop_end") //If the roll-over occurred, jump out of the loop
-                .cpy(value(BITMAP_DATA_END.lowByte()))
+                .bne("inner_loop") //As long as we haven't rolled over, loop
+                .inc(MEM_VECTOR_HIGH)
+                .ldx(MEM_VECTOR_HIGH)
+                .cpx(value(BITMAP_DATA_END.highByte()))
                 .bne("inner_loop")
-                .lda(value(BITMAP_DATA_END.highByte())) //Check against high byte of bitmap vec
-                .cmp(MEM_VECTOR_HIGH)
-                .beq("loop_end")
-                .lda(CLEAR_VALUE)
-                .jmp("inner_loop")
-              .label("loop_end")
-                .sty(MEM_VECTOR_LOW) //Store the y register, so the vector points to the final address for verification
-                .lda(CLEAR_VALUE)
-                .sta(BITMAP_DATA_END) //Our loops ends 1 address early
-                .rts()
-
-                .buildElements();
+              .label("last_loop")
+                .sta(MEM_VECTOR_LOW.indirectIndexedY())
+                .iny()
+                .cpy(value(BITMAP_DATA_END.lowByte())) //This time we don't increase until 0, but the last address
+                .bne("last_loop") //As long as we haven't rolled over, loop
+                .sta(MEM_VECTOR_LOW.indirectIndexedY()) //Last item
+                .rts();
     }
 }

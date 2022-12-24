@@ -3,9 +3,6 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.Stream;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public record Data(byte[] bytes) implements ProgramElement {
@@ -19,5 +16,10 @@ public record Data(byte[] bytes) implements ProgramElement {
                 .collect(Collectors.joining(","));
 
         return base + bytesAsText;
+    }
+
+    @Override
+    public int length() {
+        return bytes.length;
     }
 }

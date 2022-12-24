@@ -5,7 +5,7 @@ import io.vavr.collection.List;
 import io.vavr.control.Try;
 
 
-public record Operation(OpCode opCode, Operand operand) implements ProgramElement {
+public record Operation(OpCode opCode, Operand.ConcreteOperand operand) {
 
     public AddressingMode addressingMode() {
         return operand.addressingMode();
@@ -22,18 +22,14 @@ public record Operation(OpCode opCode, Operand operand) implements ProgramElemen
         return new Operation(opCode, Operand.noValue());
     }
 
-    public static Operation operation(OpCode opCode, String label) {
-        return new Operation(opCode, new Operand.LabelOperand(label));
-    }
-
-    public static Operation operation(OpCode opCode, Operand operand) {
+    public static Operation operation(OpCode opCode, Operand.ConcreteOperand operand) {
         return new Operation(opCode, operand);
     }
 
     public byte[] bytes() {
-        byte firstByte = opCode.codeForAddressingMode(addressingMode()).getOrElseThrow(
+        byte firstByte = opCode.findByAddressingMode(addressingMode()).getOrElseThrow(
                 () -> new IllegalArgumentException("Unsupported AddressingMode: " + addressingMode() + " for OpCode " + opCode)
-        );
+        ).code();
 
         byte[] value = operand.bytes();
 

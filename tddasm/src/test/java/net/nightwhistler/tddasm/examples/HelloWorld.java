@@ -10,17 +10,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import static net.nightwhistler.tddasm.c64.kernal.ChrOut.CHROUT_ADDRESS;
+import static net.nightwhistler.tddasm.c64.kernal.ClearScreen.CLR_SCREEN_ADDRESS;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
-import static net.nightwhistler.tddasm.mos65xx.Operand.addressOf;
+import static net.nightwhistler.tddasm.mos65xx.Operand.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 @CompileProgram("hello_world.prg")
 public class HelloWorld {
-    public static Program main() {
+
+    /**
+     * A Hello Wold that doesn't use any Kernal routines
+     * @return
+     */
+    public static Program usingPureASM() {
 
         /*
         Hello world example taken from
         https://8bitheaven.home.blog/2020/01/07/c64-assembly-hello-world/
+        and modified to not use the kernal
          */
         return new ProgramBuilder()
                       .label("start")
@@ -31,7 +39,7 @@ public class HelloWorld {
                         .lda(value(0x01))
                         .sta(address(0x286))
                         //Clear the screen and jump to draw routine
-                        .jsr(address(0xe544))
+                        .jsr("clear_screen")
                         //Select lower-case fonts
                         .lda(value(0x17))
                         .sta(address(0xD018))
@@ -42,26 +50,66 @@ public class HelloWorld {
 
                       .label("msg")
                         .screenCodes("             Hello world!               ")
-
                       .label("draw_text")
                         .lda(value(0x00))
                       .label("draw_loop")
-                        .lda(addressOf("msg").xIndexed())
+                        .lda(label("msg").xIndexed())
                         .sta(address(0x05e0).xIndexed())
                         .inx()
                         .cpx(value(0x28))
                         .bne("draw_loop")
                         .rts()
 
+                .include(clearScreen())
+                .buildProgram();
+    }
+
+    private static ProgramBuilder clearScreen() {
+        return new ProgramBuilder()
+          .label("clear_screen")
+                .lda(value(0x20))
+                .sta(address(0x400).xIndexed())
+                .sta(address(0x500).xIndexed())
+                .sta(address(0x600).xIndexed())
+                .sta(address(0x6E8).xIndexed())
+                //Grab the text colour and set it in colour RAM
+                .lda(address(0x286))
+                .sta(address(0xD800).xIndexed())
+                .sta(address(0xD900).xIndexed())
+                .sta(address(0xDA00).xIndexed())
+                .sta(address(0xDAE8).xIndexed())
+                .inx()
+                .bne("clear_screen")
+                .rts();
+    }
+
+    /**
+     * A much shorter Hello World using Kernal routines
+     * @return
+     */
+    public static Program usingKernal() {
+        return new ProgramBuilder()
+                .jsr(CLR_SCREEN_ADDRESS)  //$e5ff, unofficial but used a lot
+                .lda(value(0x00))
+            .label("write")
+                .lda(label("hello").xIndexed())
+                .jsr(CHROUT_ADDRESS) //$FFD2
+                .inx()
+                .cpx(value(0x0B))
+                .bne("write")
+                .rts()
+            .label("hello")
+                .screenCodes("HELLO WORLD")
                 .buildProgram();
     }
 
     public static void main(String argv[]) {
         try {
-            File output = new File("hello_world.prg");
+            File output = new File("hello_world2.prg");
             output.createNewFile();
             FileOutputStream fout = new FileOutputStream(output);
-            var program = main().withBASICStarter();
+//            var program = usingPureASM().withBASICStarter();
+            var program = usingKernal().withBASICStarter();
             program.printASM(new PrintWriter(System.out), true);
 
             ProgramWriter.writeProgram(program, fout);
