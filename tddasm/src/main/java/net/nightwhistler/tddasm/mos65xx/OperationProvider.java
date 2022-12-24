@@ -4,7 +4,7 @@ public record OperationProvider(OpCode opCode, Operand operand) implements Progr
     Operation provide(Program program, Operand.TwoByteAddress offset) {
         return switch (operand) {
             case Operand.ConcreteOperand concreteOperand -> new Operation(opCode, concreteOperand);
-            case Operand.DynamicOperand dynamicOperand -> new Operation(opCode, dynamicOperand.makeConcrete(program, offset));
+            case Operand.VirtualOperand virtualOperand -> new Operation(opCode, virtualOperand.resolve(program, offset));
         };
     }
 

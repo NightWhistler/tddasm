@@ -1,9 +1,9 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import io.vavr.control.Option;
 import net.nightwhistler.ByteUtils;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static net.nightwhistler.ByteUtils.highByte;
 import static net.nightwhistler.ByteUtils.lowByte;
@@ -13,6 +13,10 @@ public sealed interface Operand {
 
     int length();
 
+    /**
+     * A ConcreteOperand is an Operand that has all the needed
+     * information to be compiled into bytes.
+     */
     sealed interface ConcreteOperand extends Operand {
         default byte[] bytes() {
             return new byte[0];
@@ -23,8 +27,25 @@ public sealed interface Operand {
             return bytes().length;
         }
     }
-    sealed interface DynamicOperand extends Operand {
-        ConcreteOperand makeConcrete(Program program, TwoByteAddress offset);
+
+    /**
+     * A VirtualOperand is an Operand that first
+     * needs to be reolved into a ConcreteOperand
+     * before it can be compiled. This is mostly
+     * meant for labels.
+     */
+    sealed interface VirtualOperand extends Operand {
+
+        /**
+         * Resolves this VirtualOperand into a concrete one.
+         *
+         * This generally means translating a label into an address.
+         *
+         * @param program the Program to resolve in
+         * @param offset the offset inside this program to resolve relative to.
+         * @return a ConcreteOperand which can be compiled.
+         */
+        ConcreteOperand resolve(Program program, TwoByteAddress offset);
     }
 
     sealed interface AddressOperand extends ConcreteOperand {
@@ -173,7 +194,7 @@ public sealed interface Operand {
     }
 
     record LabelTransformation(LabelOperand labelOperand, Function<AddressOperand, ConcreteOperand> tranformation, int length)
-            implements DynamicOperand {
+            implements VirtualOperand {
 
         @Override
         public AddressingMode addressingMode() {
@@ -181,13 +202,13 @@ public sealed interface Operand {
         }
 
         @Override
-        public ConcreteOperand makeConcrete(Program program, TwoByteAddress offset) {
-            return tranformation.apply(labelOperand.makeConcrete(program, offset));
+        public ConcreteOperand resolve(Program program, TwoByteAddress offset) {
+            return tranformation.apply(labelOperand.resolve(program, offset));
         }
 
     }
 
-    record LabelOperand(String label, AddressingMode addressingMode) implements DynamicOperand {
+    record LabelOperand(String label, AddressingMode addressingMode) implements VirtualOperand {
         public LabelOperand(String label) {
             this(label, AddressingMode.AbsoluteAddress);
         }
@@ -200,11 +221,11 @@ public sealed interface Operand {
             return new LabelOperand(label, AddressingMode.AbsoluteAddressY);
         }
 
-        public DynamicOperand lowByte() {
+        public VirtualOperand lowByte() {
             return new LabelTransformation(this, address -> value(address.lowByte()), 1);
         }
 
-        public DynamicOperand highByte() {
+        public VirtualOperand highByte() {
             return new LabelTransformation(this, address -> value(address.highByte()), 1);
         }
 
@@ -217,8 +238,8 @@ public sealed interface Operand {
         }
 
         @Override
-        public AddressOperand makeConcrete(Program program, TwoByteAddress offset) {
-            return program.resolveLabel(this, offset)
+        public AddressOperand resolve(Program program, TwoByteAddress offset) {
+            return Option.of(program).flatMap(p -> p.resolveLabel(this, offset))
                     .getOrElseThrow(() -> new IllegalArgumentException("Could not find label " + label));
         }
 

@@ -58,6 +58,17 @@ public class Processor {
     }
 
     /**
+     * Attempts to perform the Operation provided by the given provider.
+     *
+     * If the Provider contains a VirtualOperand, it will be resolved
+     * against the currently loaded Program, if any.
+     * @param operationProvider
+     */
+    public void performOperation(OperationProvider operationProvider) {
+        performOperation(operationProvider.provide(currentProgram, programCounter));
+    }
+
+    /**
      * Tells the Processor to process an operation.
      *
      * Since this is not read from memory, it does not
@@ -211,7 +222,6 @@ public class Processor {
     private void jumpIf(Operand operand, boolean condition) {
         if (condition) {
             int jumpTo = switch (operand) {
-                case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
                 case Operand.AddressOperand addressOperand -> location(addressOperand);
                 default -> throw new IllegalArgumentException("Unsupported operand type for jumps: " + operand.getClass().getSimpleName());
             };
@@ -236,21 +246,8 @@ public class Processor {
         this.statusRegister.setNegativeFlag(newValue < 0);
     }
 
-    private int resolveLabel(Operand.LabelOperand labelOperand) {
-        return  Option.of(currentProgram)
-                .flatMap(p -> p.resolveLabel(labelOperand, this.programCounter))
-                .map( addressOperand -> switch (addressOperand.addressingMode()) {
-                    case AbsoluteAddress -> ((Operand.TwoByteAddress) addressOperand).toInt();
-                    case AbsoluteAddressX -> ((Operand.TwoByteAddress) addressOperand).toInt() + toUnsignedInt(xRegister);
-                    case AbsoluteAddressY -> ((Operand.TwoByteAddress) addressOperand).toInt() + toUnsignedInt(yRegister);
-                    case Relative -> ((Operand.OneByteAddress) addressOperand).byteValue() + this.programCounter.toInt();
-                    default -> throw new UnsupportedOperationException(String.format("Can't use AddressingMode %s for labels"));
-                }) .getOrElseThrow(() -> new IllegalArgumentException("Can't resolve label " + labelOperand.label()));
-    }
-
     private int location(Operand.AddressOperand addressOperand) {
         return switch (addressOperand) {
-//            case Operand.LabelOperand labelOperand -> resolveLabel(labelOperand);
             case Operand.OneByteAddress oneByteAddress -> {
 
                 byte byteValue = oneByteAddress.byteValue();
