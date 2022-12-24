@@ -16,14 +16,15 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
-@CompileProgram("hello_world.prg")
+@CompileProgram("bla")
 public class HelloWorld {
 
     /**
      * A Hello Wold that doesn't use any Kernal routines
      * @return
      */
-    public static Program usingPureASM() {
+    @CompileProgram("hello_world.prg")
+    public Program usingPureASM() {
 
         /*
         Hello world example taken from

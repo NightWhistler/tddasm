@@ -14,7 +14,7 @@ public class HelloWorldTest {
     public void shouldDisplayHelloWorld() {
         Processor processor = new Processor();
         TextModeScreen screen = new TextModeScreen(processor);
-        Program helloWorld = HelloWorld.usingPureASM();
+        Program helloWorld = new HelloWorld().usingPureASM();
         processor.load(helloWorld);
 
         processor.run(helloWorld.startAddress());

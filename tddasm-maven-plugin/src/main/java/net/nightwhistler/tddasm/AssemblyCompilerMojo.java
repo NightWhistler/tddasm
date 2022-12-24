@@ -15,5 +15,10 @@ public class AssemblyCompilerMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         getLog().info("AssemblyCompilerMojo!!!!!!!!!!!");
+//        try {
+//            AnnotatedClassesCompiler.compileAnnotatedClasses();
+//        } catch (Exception e ) {
+//            e.printStackTrace();
+//        }
     }
 }
