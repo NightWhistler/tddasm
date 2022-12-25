@@ -1,24 +1,26 @@
 package net.nightwhistler.rleviewer.asmbook.chapter11;
 
+import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
-import net.nightwhistler.tddasm.util.ProgramWriter;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 public class ColourCharacters {
+
+
+    @CompileProgram("vic-characters.prg")
+    public static Program vicCharactersCompilable() {
+        return vicCharacters().withBASICStarter();
+    }
+
     /**
      * Example 11-1 A Progtam to Demonstrate some of the
      * Video Display Options of the VIC
      */
-    public static Program vicCharacters() {
+    private static Program vicCharacters() {
         final Operand.TwoByteAddress SCN = address(0x8400);
         final Operand.TwoByteAddress CLR = address(0xD800);
 
@@ -77,21 +79,4 @@ public class ColourCharacters {
                 .buildProgram();
 
     }
-
-
-    public static void main(String argv[]) {
-        try {
-            File output = new File("vic_characters.prg");
-            output.createNewFile();
-            FileOutputStream fout = new FileOutputStream(output);
-            var program = vicCharacters().withBASICStarter();
-            program.printASM(new PrintWriter(System.out), true);
-
-            ProgramWriter.writeProgram(program, fout);
-            fout.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
