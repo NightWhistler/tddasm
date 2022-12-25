@@ -37,7 +37,7 @@
    - Would be convenient and friendly.
 
 * TODO Implement NMI as well
-* TODO Create a Compiler class that scans for annotated classes
+* DONE Create a Compiler class that scans for annotated classes
   It should then compile them and put the output in target/mos62xx
 * TODO Create a parser for .asm files
   Should be able to just be a simple regex-pased tokenizer.
@@ -56,7 +56,7 @@
    - Error message: "Operations should either be implemented or declared
      illegal"
 
-* TODO Create a Maven code generation plugin.
+* DONE Create a Maven code generation plugin.
   Once we have the compiler class it's a matter of simply calling that (I
   hope!)
 * TODO Allow binary data as .*.
