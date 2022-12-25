@@ -21,21 +21,21 @@ public class Processor {
     private byte xRegister;
     private byte yRegister;
 
-    private StatusRegister statusRegister = new StatusRegister();
+    private final StatusRegister statusRegister = new StatusRegister();
 
     private int stackPointer = 0xF3;
 
     private Operand.TwoByteAddress programCounter = address(0x00);
 
     //64kb of memory, C64 style.
-    private static int MEMORY_SIZE = (int) Math.pow(2, 16);
+    private static final int MEMORY_SIZE = (int) Math.pow(2, 16);
     private byte[] memory = new byte[MEMORY_SIZE];
 
     private Program currentProgram = null;
 
     private Map<Operand.TwoByteAddress, JavaRoutine> kernalRoutines = new HashMap<>();
 
-    private List<ProcessorEvent.Listener> listeners = List.empty();
+    private List<ProcessorEvent.Listener<ProcessorEvent>> listeners = List.empty();
 
     private int operationCount = 0;
 
@@ -403,7 +403,7 @@ public class Processor {
         this.listeners.forEach(l -> l.receiveEvent(processorEvent));
     }
 
-    public void registerEventListener(ProcessorEvent.Listener<?> listener) {
+    public void registerEventListener(ProcessorEvent.Listener<ProcessorEvent> listener) {
         this.listeners = this.listeners.append(listener);
     }
 
