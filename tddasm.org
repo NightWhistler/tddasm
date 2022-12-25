@@ -27,10 +27,22 @@
      - Has a toBit(boolean) method → true = 1, false = 0
      - Builds the byte by bit-shifting
 * DONE Figure out how to support interrupts
+* TODO Add label resolution method on a Program that allows running from a Label
+  This allows just running a specific rubroutine from a Program.
+
+  We already have everything in place, except easily getting the starting
+  point of the Label
+
+  Maybe add a runFromLabel(String) method on the Processor as well?
+   - Would be convenient and friendly.
+
+* TODO Implement NMI as well
 * TODO Create a Compiler class that scans for annotated classes
   It should then compile them and put the output in target/mos62xx
 * TODO Create a parser for .asm files
   Should be able to just be a simple regex-pased tokenizer.
+** TODO generate both binaries and .java builder files from ASM sources
+** TODO Also just parse them into a Program object
 * TODO Add a keyboard class
   It should wrap the Processor and have an internal buffer of keypresses.
    - Calling pressKey(key) should add a byte to the internal buffer.
