@@ -1,9 +1,9 @@
-package net.nightwhistler.tddasm.examples;
+package net.nightwhistler.helloworld;
 
 import net.nightwhistler.tddasm.c64.kernal.Kernal;
+import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 import net.nightwhistler.tddasm.mos65xx.Processor;
 import net.nightwhistler.tddasm.mos65xx.Program;
-import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +14,7 @@ public class HelloWorldTest {
     public void shouldDisplayHelloWorld() {
         Processor processor = new Processor();
         TextModeScreen screen = new TextModeScreen(processor);
-        Program helloWorld = new HelloWorld().usingPureASM();
+        Program helloWorld = new HelloWorld().usingPureASM().buildProgram();
         processor.load(helloWorld);
 
         processor.run(helloWorld.startAddress());
@@ -29,7 +29,7 @@ public class HelloWorldTest {
         Kernal.registerKernalRoutines(processor);
 
         TextModeScreen screen = new TextModeScreen(processor);
-        Program helloWorld = HelloWorld.usingKernal();
+        Program helloWorld = HelloWorld.usingKernal().buildProgram();
         processor.load(helloWorld);
 
         processor.run(helloWorld.startAddress());

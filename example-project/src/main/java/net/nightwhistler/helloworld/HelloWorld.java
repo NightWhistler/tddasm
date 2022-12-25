@@ -3,12 +3,6 @@ package net.nightwhistler.helloworld;
 import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
-import net.nightwhistler.tddasm.util.ProgramWriter;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 import static net.nightwhistler.tddasm.c64.kernal.ChrOut.CHROUT_ADDRESS;
 import static net.nightwhistler.tddasm.c64.kernal.ClearScreen.CLR_SCREEN_ADDRESS;
@@ -19,11 +13,22 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 public class HelloWorld {
 
     /**
-     * A Hello Wold that doesn't use any Kernal routines
+     * Version to be compiled to a C64 binary,
+     * adds the BASIC starter for running on actual hardware
+     * or on VICE.
+     *
      * @return
      */
     @CompileProgram("hw-pure.prg")
-    public static Program usingPureASM() {
+    public static Program helloWorldUsingASM() {
+        return usingPureASM().buildProgram().withBASICStarter();
+    }
+
+    /**
+     * A Hello Wold that doesn't use any Kernal routines
+     * @return
+     */
+    public static ProgramBuilder usingPureASM() {
 
         /*
         Hello world example taken from
@@ -60,8 +65,7 @@ public class HelloWorld {
                         .bne("draw_loop")
                         .rts()
 
-                .include(clearScreen())
-                .buildProgram().withBASICStarter();
+                .include(clearScreen());
     }
 
     private static ProgramBuilder clearScreen() {
@@ -88,7 +92,11 @@ public class HelloWorld {
      * @return
      */
     @CompileProgram("hw-kernal.prg")
-    public static Program usingKernal() {
+    public static Program helloWorldUsingKernal() {
+        return usingKernal().buildProgram().withBASICStarter();
+    }
+
+    public static ProgramBuilder usingKernal() {
         return new ProgramBuilder()
                 .jsr(CLR_SCREEN_ADDRESS)  //$e5ff, unofficial but used a lot
                 .ldx(value(0x00))
@@ -100,7 +108,6 @@ public class HelloWorld {
                 .bne("write")
                 .rts()
             .label("hello")
-                .screenCodes("HELLO WORLD")
-                .buildProgram().withBASICStarter();
+                .screenCodes("HELLO WORLD");
     }
 }
