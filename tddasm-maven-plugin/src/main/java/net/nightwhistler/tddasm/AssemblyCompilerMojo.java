@@ -1,6 +1,8 @@
 package net.nightwhistler.tddasm;
 
 import net.nightwhistler.tddasm.annotation.CompileProgram;
+import net.nightwhistler.tddasm.mos65xx.Processor;
+import net.nightwhistler.tddasm.mos65xx.Program;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -11,6 +13,9 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileSystems;
@@ -44,10 +49,9 @@ public class AssemblyCompilerMojo extends AbstractMojo {
                 if (classFile.getFileName().toString().endsWith(".class")) {
                     String className = className(javaOutputPath.relativize(classFile));
                     Class<?> clz = projectClassloader.loadClass(className);
-                    if (clz.getAnnotationsByType(CompileProgram.class).length > 0) {
-                        getLog().info("Class is annotated.");
-                    } else {
-                        getLog().info("Class is not annotated.");
+
+                    for (Method m: clz.getDeclaredMethods()) {
+                        checkMethod(m);
                     }
                 }
             }
@@ -55,6 +59,29 @@ public class AssemblyCompilerMojo extends AbstractMojo {
             getLog().error("Could not scan files", io);
         } catch (ClassNotFoundException cle) {
             getLog().error("Could not load class: ", cle);
+        }
+    }
+
+    private void checkMethod(Method method) {
+        CompileProgram compileProgram = method.getAnnotation(CompileProgram.class);
+        if (compileProgram != null) {
+            String name = compileProgram.value();
+
+//            if ( method.getReturnType() != Program.class ) {
+//                getLog().error("Cannot compile method " + method.getName() +
+//                        " class " + method.getDeclaringClass().getSimpleName()
+//                        + ". Should be a static method with return-type Program and no arguments."
+//                );
+//            }
+
+            try {
+                Program program = (Program) method.invoke(null, new Object[0]);
+                program.printASM(new PrintWriter(System.out), true);
+            } catch (Exception i) {
+                getLog().error("Erorr compiling " + name, i);
+            }
+        } else {
+            getLog().info("Method " + method.getName() + " is not annotated. Skipping.");
         }
     }
 

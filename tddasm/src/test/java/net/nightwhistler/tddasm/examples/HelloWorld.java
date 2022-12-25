@@ -16,14 +16,13 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.label;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
-@CompileProgram("bla")
 public class HelloWorld {
 
     /**
      * A Hello Wold that doesn't use any Kernal routines
      * @return
      */
-    @CompileProgram("hello_world.prg")
+    @CompileProgram("hello_world_pure_asm.prg")
     public Program usingPureASM() {
 
         /*
@@ -88,6 +87,7 @@ public class HelloWorld {
      * A much shorter Hello World using Kernal routines
      * @return
      */
+    @CompileProgram("hello_world_kernal.prg")
     public static Program usingKernal() {
         return new ProgramBuilder()
                 .jsr(CLR_SCREEN_ADDRESS)  //$e5ff, unofficial but used a lot

@@ -10,5 +10,6 @@ public class ProgramWriter {
         outputStream.write(program.startAddress().lowByte());
         outputStream.write(program.startAddress().highByte());
         outputStream.write(program.compile());
+        outputStream.flush();
     }
 }

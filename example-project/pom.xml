@@ -98,6 +98,9 @@
         <groupId>net.nightwhistler</groupId>
         <artifactId>tddasm-maven-plugin</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <configuration>
+          <argLine>--enable-preview</argLine>
+        </configuration>
         <executions>
           <execution>
             <phase>compile</phase>

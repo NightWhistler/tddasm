@@ -2,13 +2,13 @@ package net.nightwhistler.rleviewer;
 
 import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;
+import net.nightwhistler.tddasm.mos65xx.Program;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
-@CompileProgram("clr_bitmap.prg")
 public class ClearBitmapMemory {
     private static int VIC_REG_1=0xD011;
     private static int VIC_REG_2=0xD016;
@@ -63,6 +63,11 @@ public class ClearBitmapMemory {
      *  rts
      *
     */
+
+    @CompileProgram("clr_bitmap.prg")
+    public static Program clrBitMapTest() {
+        return clearBitmapMemory().buildProgram().withBASICStarter();
+    }
 
     static ProgramBuilder clearBitmapMemory() {
 

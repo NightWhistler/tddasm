@@ -113,6 +113,8 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
             if (element instanceof Label l) {
                 printWriter.println(l);
+            } else if (element instanceof OperationProvider op){
+                printWriter.println("  " + op.provide(this, startAddress));
             } else {
                 printWriter.println("  " + element);
             }
