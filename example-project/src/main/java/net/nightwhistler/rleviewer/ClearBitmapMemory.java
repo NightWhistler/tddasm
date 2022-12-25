@@ -1,6 +1,5 @@
 package net.nightwhistler.rleviewer;
 
-import io.vavr.collection.List;
 import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.ProgramBuilder;
@@ -9,6 +8,7 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static net.nightwhistler.tddasm.mos65xx.Operand.zeroPage;
 
+@CompileProgram("clr_bitmap.prg")
 public class ClearBitmapMemory {
     private static int VIC_REG_1=0xD011;
     private static int VIC_REG_2=0xD016;
@@ -64,7 +64,6 @@ public class ClearBitmapMemory {
      *
     */
 
-    @CompileProgram("clr_bitmap.prg")
     static ProgramBuilder clearBitmapMemory() {
 
         //This is a subroutine to clear 8000 memory addresses,
