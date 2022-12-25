@@ -555,6 +555,7 @@ public class Processor {
 
     private void executeKernalRoutine() {
         JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
+        fireEvent(new ProcessorEvent.JavaRoutineExecuted(programCounter, javaRoutine.getClass().getSimpleName()));
         javaRoutine.execute(this);
         performOperation(javaRoutine.endWith());
     }

@@ -10,6 +10,8 @@ public sealed interface ProcessorEvent {
 
     record InterruptRequest(Operand.TwoByteAddress programCounterBefore) implements ProcessorEvent {}
 
+    record JavaRoutineExecuted(Operand.TwoByteAddress programCounterBefore, String name) implements ProcessorEvent {}
+
     record RegisterStateChangedEvent(
             Operand.TwoByteAddress programCounter,
             int stackPointer,
