@@ -54,17 +54,9 @@ public sealed interface Operand {
         byte lowByte();
     }
 
-    final class NoValue implements ConcreteOperand {
-        private NoValue() {}
-        private static NoValue instance = new NoValue();
-
-        public static NoValue noValue() {
-            return instance;
-        }
-
-        @Override
-        public AddressingMode addressingMode() {
-            return AddressingMode.Implied;
+    record NoValue(AddressingMode addressingMode) implements ConcreteOperand {
+        public NoValue() {
+            this(AddressingMode.Implied);
         }
 
         public String toString() {
@@ -272,7 +264,19 @@ public sealed interface Operand {
     }
 
     static NoValue noValue() {
-        return NoValue.noValue();
+        return new NoValue();
+    }
+
+    static NoValue noValue(AddressingMode addressingMode) {
+        return new NoValue(addressingMode);
+    }
+
+    static NoValue implied() {
+        return new NoValue(AddressingMode.Implied);
+    }
+
+    static NoValue accumulator() {
+        return new NoValue(AddressingMode.Accumulator);
     }
 
 }

@@ -1,16 +1,17 @@
 package net.nightwhistler.tddasm.mos65xx;
 
 import io.vavr.collection.List;
-import io.vavr.control.Option;
 import net.nightwhistler.ByteUtils;
 import net.nightwhistler.tddasm.c64.kernal.Kernal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.Byte.toUnsignedInt;
 import static net.nightwhistler.ByteUtils.littleEndianBytesToInt;
+import static net.nightwhistler.ByteUtils.toInt;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
@@ -107,6 +108,8 @@ public class Processor {
 
             case ORA -> setFlags(accumulator = (byte) (accumulator | value(operation.operand())));
 
+            case EOR -> setFlags(accumulator = (byte) (accumulator ^ value(operation.operand())));
+
             case TSX -> setFlags(xRegister = (byte) stackPointer);
 
             case TXS -> stackPointer = toUnsignedInt(xRegister);
@@ -126,16 +129,20 @@ public class Processor {
             case SEC -> statusRegister.setCarryFlag(true);
 
             case SBC -> {
+                byte oldAcc = accumulator;
                 byte carryComplement = (byte) (statusRegister.isCarryFlagSet() ? 0 : 1);
                 setFlags(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
                 statusRegister.setCarryFlag(!statusRegister.isNegativeFlagSet());
+                setOverflow(oldAcc, accumulator);
             }
 
             case ADC -> {
+                byte oldAcc = accumulator;
                 int carryValue = statusRegister.isCarryFlagSet() ? 1: 0;
                 int result = accumulator + value(operation.operand()) + carryValue;
                 setFlags(accumulator = (byte) (result & 0xFFFF));
                 statusRegister.setCarryFlag(result > 0xFF);
+                setOverflow(oldAcc, accumulator);
              }
 
             //Store y register
@@ -157,6 +164,10 @@ public class Processor {
             case BCS -> jumpIf(operation.operand(), statusRegister.isCarryFlagSet());
 
             case BCC -> jumpIf(operation.operand(), !statusRegister.isCarryFlagSet());
+
+            case BVS -> jumpIf(operation.operand(), statusRegister.isOverFlowFlagSet());
+
+            case BVC -> jumpIf(operation.operand(), !statusRegister.isOverFlowFlagSet());
 
             case INX -> setFlags(++xRegister);
 
@@ -180,6 +191,46 @@ public class Processor {
 
             case CLI -> statusRegister.setInterruptDisableFlag(false);
 
+            case ASL -> doModify(operation.operand(), (value) -> {
+                int newValue = value << 1;
+                statusRegister.setCarryFlag(newValue > 0xFF);
+                return (byte) (newValue & 0xFF);
+            });
+
+            case ROL -> doModify(operation.operand(), (value) -> {
+                int carryValueAsInt = toInt(statusRegister.isCarryFlagSet());
+                int newValue = (value << 1) + carryValueAsInt;
+                statusRegister.setCarryFlag(newValue > 0xFF);
+                return (byte) (newValue & 0xFF);
+            });
+
+            case LSR -> doModify(operation.operand(), (value) -> {
+                //Check if the last bit is 1 or 0
+                boolean carryFlag = value % 2 == 1;
+                int newValue = value >>> 1;
+                statusRegister.setCarryFlag(carryFlag);
+                return (byte) (newValue & 0xFF);
+            });
+
+            case ROR -> doModify(operation.operand(), (value) -> {
+                int carryValueAsInt = toInt(statusRegister.isCarryFlagSet());
+                //Check if the last bit is 1 or 0
+                boolean carryFlag = value % 2 == 1;
+                int newValue = value >>> 1;
+                newValue += carryValueAsInt * 128; //Add the carry flag in bit 7
+
+                statusRegister.setCarryFlag(carryFlag);
+                return (byte) (newValue & 0xFF);
+            });
+
+            case BIT -> {
+                byte value = value(operation.operand());
+                setFlags(value);
+                statusRegister.setZeroFlag((value & accumulator) == 0);
+                //Transfer bit 6 into the overflow flag
+                statusRegister.setOverFlowFlag((value & 0b01000000) > 0);
+            }
+
             case BRK -> {
                 this.statusRegister.setBreakCommandFlag(true);
                 //The BRK instruction takes 1 byte but increments the PC by 2
@@ -189,18 +240,63 @@ public class Processor {
                 doInterruptHandling();
             }
 
+            case CLD -> statusRegister.setDecimalModeFlag(false);
+
+            case SED -> statusRegister.setDecimalModeFlag(true);
+
+            case CLV -> statusRegister.setOverFlowFlag(false);
+
+            case NOP -> {} //Do nothing at all
+
+            case PHP -> pushStack(statusRegister.toByte());
+
+            case PLP -> statusRegister.setFrom(popStack());
+
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }
 
         operationCount++;
     }
 
-    private void doModify(Operand.AddressOperand operand, Function<Byte, Byte> modifier) {
-        int location = location(operand);
-        byte value = peekValue(location);
-        value = modifier.apply(value);
-        setFlags(value);
-        pokeValue(location, value);
+    private void setOverflow(byte oldValue, byte newValue) {
+        //There is probably a way more efficient way to do this
+        //but this follows the spec exactly
+        boolean bit7Old = oldValue < 0;
+        boolean bit6Old = (oldValue & 0x01000000) > 0;
+
+        boolean bit7New = newValue < 0;
+        boolean bit6New = (newValue & 0x01000000) > 0;
+
+        //TODO IntelliJ claims the second clause is always true when reached. Why?
+        boolean overflowOccurred = bit7Old != bit7New && bit6Old != bit6New;
+        statusRegister.setOverFlowFlag(overflowOccurred);
+    }
+
+    private void doModify(Operand.ConcreteOperand operand, Function<Byte, Byte> modifier) {
+
+        Consumer<Byte> postOp;
+
+        byte originalValue = switch (operand) {
+            case Operand.AddressOperand addressOperand -> {
+                int location = location(addressOperand);
+                postOp = (n) -> pokeValue(location, n);
+                yield peekValue(location);
+            }
+            case Operand.NoValue nv -> {
+                if (nv.addressingMode() == AddressingMode.Accumulator ) {
+                    postOp = (n) -> accumulator = n;
+                    yield accumulator;
+                } else {
+                    throw new IllegalArgumentException("Unsupported AddressingMode " + operand.addressingMode());
+                }
+            }
+
+            default -> throw new IllegalArgumentException("Unsupported AddressingMode " + operand.addressingMode());
+        };
+
+        byte newValue = modifier.apply(originalValue);
+        setFlags(newValue);
+        postOp.accept(newValue);
     }
 
     private void doJsr(Operand operand) {
@@ -459,6 +555,7 @@ public class Processor {
 
     private void executeKernalRoutine() {
         JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
+        fireEvent(new ProcessorEvent.JavaRoutineExecuted(programCounter, javaRoutine.getClass().getSimpleName()));
         javaRoutine.execute(this);
         performOperation(javaRoutine.endWith());
     }
@@ -471,6 +568,10 @@ public class Processor {
                 .getOrElseThrow(() ->
                         new IllegalStateException("Unmappable instruction: $" + Integer.toHexString(toUnsignedInt(opCode)))
                 );
+
+        if (mapping.opCode().isIllegal()) {
+            throw new IllegalArgumentException("Got illegal OpCode: " + mapping.opCode());
+        }
 
         int bytesToRead = mapping.addressingMode().size();
         byte[] data = switch (bytesToRead) {
@@ -513,6 +614,10 @@ public class Processor {
 
     public boolean isNegativeFlagSet() {
         return statusRegister.isNegativeFlagSet();
+    }
+
+    public boolean isOverflowFlagSet() {
+        return statusRegister.isOverFlowFlagSet();
     }
 
     public boolean isZeroFlagSet() {

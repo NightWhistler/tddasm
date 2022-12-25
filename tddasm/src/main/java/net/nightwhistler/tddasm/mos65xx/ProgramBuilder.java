@@ -6,7 +6,10 @@ import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Accumulator;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
+import static net.nightwhistler.tddasm.mos65xx.Operand.accumulator;
+import static net.nightwhistler.tddasm.mos65xx.Operand.implied;
 import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 
 public class ProgramBuilder {
@@ -67,6 +70,14 @@ public class ProgramBuilder {
         return withOperation(OpCode.LDA, operand);
     }
 
+    public ProgramBuilder and(Operand operand) {
+        return withOperation(OpCode.AND, operand);
+    }
+
+    public ProgramBuilder ora(Operand operand) {
+        return withOperation(OpCode.ORA, operand);
+    }
+
     public ProgramBuilder ldx(Operand operand) {
         return withOperation(OpCode.LDX, operand);
     }
@@ -74,8 +85,76 @@ public class ProgramBuilder {
     public ProgramBuilder stx(Operand operand) {
         return withOperation(OpCode.STX, operand);
     }
+
+    public ProgramBuilder asl(Operand operand) {
+        return withOperation(OpCode.ASL, operand);
+    }
+
+    public ProgramBuilder asl() {
+        return asl(accumulator());
+    }
+
+    public ProgramBuilder bcc(Operand operand) {
+        return withOperation(OpCode.BCC, operand);
+    }
+
+    public ProgramBuilder bcs(Operand operand) {
+        return withOperation(OpCode.BCS, operand);
+    }
+    public ProgramBuilder bit(Operand operand) {
+        return withOperation(OpCode.BIT, operand);
+    }
+
+    public ProgramBuilder bmi(Operand operand) {
+        return withOperation(OpCode.BMI, operand);
+    }
+
+    public ProgramBuilder bpl(Operand operand) {
+        return withOperation(OpCode.BPL, operand);
+    }
+
+    public ProgramBuilder brk() {
+        return withOperation(OpCode.BRK, noValue());
+    }
+
+    public ProgramBuilder bvc(Operand operand) {
+        return withOperation(OpCode.BVC, operand);
+    }
+
+    public ProgramBuilder bvs(Operand operand) {
+        return withOperation(OpCode.BVS, operand);
+    }
+
+    public ProgramBuilder clc() {
+        return withOperation(OpCode.CLC, noValue());
+    }
+
+    public ProgramBuilder cld() {
+        return withOperation(OpCode.CLD, noValue());
+    }
+
+    public ProgramBuilder clv() {
+        return withOperation(OpCode.CLV, noValue());
+    }
+
+    public ProgramBuilder dec(Operand operand) {
+        return withOperation(OpCode.DEC, operand);
+    }
+
+    public ProgramBuilder nop() {
+        return withOperation(OpCode.NOP, noValue());
+    }
+
+    public ProgramBuilder dey() {
+        return withOperation(OpCode.DEY, noValue());
+    }
+
     public ProgramBuilder dex() {
         return withOperation(OpCode.DEX, noValue());
+    }
+
+    public ProgramBuilder txa() {
+        return withOperation(OpCode.TXA, noValue());
     }
 
     public ProgramBuilder sta(Operand operand) {
@@ -88,6 +167,70 @@ public class ProgramBuilder {
 
     public ProgramBuilder rti() {
         return withOperation(OpCode.RTI, noValue());
+    }
+
+    public ProgramBuilder pha() {
+        return withOperation(OpCode.PHA, noValue());
+    }
+
+    public ProgramBuilder php() {
+        return withOperation(OpCode.PHP, noValue());
+    }
+
+    public ProgramBuilder pla() {
+        return withOperation(OpCode.PLA, noValue());
+    }
+
+    public ProgramBuilder plp() {
+        return withOperation(OpCode.PLP, noValue());
+    }
+
+    public ProgramBuilder rol() {
+        return rol(accumulator());
+    }
+
+    public ProgramBuilder rol(Operand operand) {
+        return withOperation(OpCode.ROL, operand);
+    }
+
+    public ProgramBuilder ror() {
+        return ror(accumulator());
+    }
+
+    public ProgramBuilder ror(Operand operand) {
+        return withOperation(OpCode.ROR, operand);
+    }
+
+    public ProgramBuilder sbc(Operand operand) {
+        return withOperation(OpCode.SBC, operand);
+    }
+
+    public ProgramBuilder sec() {
+        return withOperation(OpCode.SEC, implied());
+    }
+
+    public ProgramBuilder sed() {
+        return withOperation(OpCode.SED, implied());
+    }
+
+    public ProgramBuilder tax() {
+        return withOperation(OpCode.TAX, implied());
+    }
+
+    public ProgramBuilder tay() {
+        return withOperation(OpCode.TAY, implied());
+    }
+
+    public ProgramBuilder tsx() {
+        return withOperation(OpCode.TSX, implied());
+    }
+
+    public ProgramBuilder txs() {
+        return withOperation(OpCode.TXS, implied());
+    }
+
+    public ProgramBuilder tya() {
+        return withOperation(OpCode.TYA, implied());
     }
 
     public ProgramBuilder sty(Operand operand) {
@@ -118,8 +261,20 @@ public class ProgramBuilder {
         return withOperation(OpCode.JSR, new Operand.LabelOperand(label));
     }
 
-    public ProgramBuilder jsr(Operand.TwoByteAddress operand) {
+    public ProgramBuilder jsr(Operand operand) {
         return withOperation(OpCode.JSR, operand);
+    }
+
+    public ProgramBuilder eor(Operand.TwoByteAddress operand) {
+        return withOperation(OpCode.EOR, operand);
+    }
+
+    public ProgramBuilder lsr() {
+       return lsr(new Operand.NoValue(Accumulator));
+    }
+
+    public ProgramBuilder lsr(Operand operand) {
+        return withOperation(OpCode.LSR, operand);
     }
 
     public ProgramBuilder beq(String label) {

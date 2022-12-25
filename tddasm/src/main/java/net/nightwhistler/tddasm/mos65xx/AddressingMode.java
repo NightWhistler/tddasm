@@ -9,7 +9,13 @@ public enum AddressingMode {
     Implied(0) {
         @Override
         public Operand.ConcreteOperand toOperand(byte... values) {
-            return createOperand(values, size(), (b) -> Operand.noValue());
+            return createOperand(values, size(), (b) -> new Operand.NoValue(this));
+        };
+    },
+    Accumulator(0) {
+        @Override
+        public Operand.ConcreteOperand toOperand(byte... values) {
+            return createOperand(values, size(), (b) -> new Operand.NoValue(this));
         };
     },
     Value(1) {

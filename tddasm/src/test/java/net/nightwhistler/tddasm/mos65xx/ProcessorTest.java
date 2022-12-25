@@ -7,6 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 
+import static net.nightwhistler.tddasm.mos65xx.OpCode.ADC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.BRK;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.CLC;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.INC;
@@ -322,6 +323,28 @@ class ProcessorTest {
         processor.performOperation(operation(INC, address(0x3000)));
 
         assertEquals(6, processor.peekValue(0x3000));
+    }
+
+    @Test
+    public void testOverflow() {
+        Processor processor = new Processor();
+        processor.pokeValue(0x2300, (byte) 127);
+        processor.performOperation(operation(LDA, value(1)));
+        processor.performOperation(operation(CLC));
+        processor.performOperation(operation(ADC, address(0x2300)));
+
+        assertEquals(-128, processor.getAccumulatorValue());
+        assertTrue(processor.isNegativeFlagSet());
+        assertTrue(processor.isOverflowFlagSet());
+
+        processor.pokeValue(0x2301, (byte) 1);
+        processor.performOperation(operation(LDA, value(-128)));
+        processor.performOperation(operation(SEC));
+        processor.performOperation(operation(SBC, address(0x2301)));
+        assertEquals(127, processor.getAccumulatorValue());
+        assertFalse(processor.isNegativeFlagSet());
+        assertTrue(processor.isOverflowFlagSet());
+
     }
 
     @Test
