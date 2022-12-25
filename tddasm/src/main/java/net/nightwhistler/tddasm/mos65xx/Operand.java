@@ -267,4 +267,16 @@ public sealed interface Operand {
         return new NoValue();
     }
 
+    static NoValue noValue(AddressingMode addressingMode) {
+        return new NoValue(addressingMode);
+    }
+
+    static NoValue implied() {
+        return new NoValue(AddressingMode.Implied);
+    }
+
+    static NoValue accumulator() {
+        return new NoValue(AddressingMode.Accumulator);
+    }
+
 }

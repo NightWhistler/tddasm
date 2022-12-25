@@ -204,6 +204,25 @@ public class Processor {
                 return (byte) (newValue & 0xFF);
             });
 
+            case LSR -> doModify(operation.operand(), (value) -> {
+                //Check if the last bit is 1 or 0
+                boolean carryFlag = value % 2 == 1;
+                int newValue = value >>> 1;
+                statusRegister.setCarryFlag(carryFlag);
+                return (byte) (newValue & 0xFF);
+            });
+
+            case ROR -> doModify(operation.operand(), (value) -> {
+                int carryValueAsInt = toInt(statusRegister.isCarryFlagSet());
+                //Check if the last bit is 1 or 0
+                boolean carryFlag = value % 2 == 1;
+                int newValue = value >>> 1;
+                newValue += carryValueAsInt * 128; //Add the carry flag in bit 7
+
+                statusRegister.setCarryFlag(carryFlag);
+                return (byte) (newValue & 0xFF);
+            });
+
             case BIT -> {
                 byte value = value(operation.operand());
                 setFlags(value);
@@ -226,6 +245,12 @@ public class Processor {
             case SED -> statusRegister.setDecimalModeFlag(true);
 
             case CLV -> statusRegister.setOverFlowFlag(false);
+
+            case NOP -> {} //Do nothing at all
+
+            case PHP -> pushStack(statusRegister.toByte());
+
+            case PLP -> statusRegister.setFrom(popStack());
 
             default -> throw new UnsupportedOperationException("Not yet implemented: " + operation.opCode());
         }

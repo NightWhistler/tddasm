@@ -35,7 +35,7 @@
   It should wrap the Processor and have an internal buffer of keypresses.
    - Calling pressKey(key) should add a byte to the internal buffer.
    - Add a SCANKEY kernal routine to read a byte from the buffer into memory
-* TODO Create a test to scan for unimplemented OpCodes
+* DONE Create a test to scan for unimplemented OpCodes
    - Loop through all the opcodes
    - If the OpCode has isIllegal() = true, skip it.
    - grab the first available AddressingMode and use that to creat an

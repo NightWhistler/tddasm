@@ -372,8 +372,24 @@ public enum OpCode {
             );
         }
     },
-    LSR,
-    NOP,
+    LSR {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Accumulator, 0x4A),
+                    mode(this, AbsoluteAddress, 0x4E),
+                    mode(this, AbsoluteAddressX, 0x5E),
+                    mode(this, ZeroPageAddress, 0x46),
+                    mode(this, ZeroPageAddressX, 0x56)
+            );
+        }
+    },
+    NOP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0xEA));
+        }
+    },
     ORA {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -407,8 +423,18 @@ public enum OpCode {
             return List.of(mode(this, Implied, 0x68));
         }
     },
-    PLP,
-    RLA,
+    PLP {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(mode(this, Implied, 0x28));
+        }
+    },
+    RLA {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     ROL {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -421,8 +447,24 @@ public enum OpCode {
             );
         }
     },
-    ROR,
-    RRA,
+    ROR {
+        @Override
+        public List<AdressingModeMapping> addressingModeMappings() {
+            return List.of(
+                    mode(this, Accumulator, 0x6A),
+                    mode(this, AbsoluteAddress, 0x6E),
+                    mode(this, AbsoluteAddressX, 0x7E),
+                    mode(this, ZeroPageAddress, 0x66),
+                    mode(this, ZeroPageAddressX, 0x76)
+            );
+        }
+    },
+    RRA {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     RTI {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -435,7 +477,12 @@ public enum OpCode {
             return List.of(mode(this,Implied, 0x60));
         }
     },
-    SAX, //Illegal
+    SAX {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     SBC {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -452,7 +499,12 @@ public enum OpCode {
             );
         }
     },
-    SBX,
+    SBX {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     SEC {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -469,11 +521,36 @@ public enum OpCode {
             return List.of(mode(this, Implied, 0x78));
         }
     },
-    SHA,
-    SHX,
-    SHY,
-    SLO,
-    SRE,
+    SHA {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
+    SHX {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
+    SHY {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
+    SLO {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
+    SRE {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     STA {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
@@ -509,7 +586,12 @@ public enum OpCode {
             );
         }
     },
-    TAS, //Illegal
+    TAS {
+        @Override
+        public boolean isIllegal() {
+            return true;
+        }
+    },
     TAX {
         @Override
         public List<AdressingModeMapping> addressingModeMappings() {
