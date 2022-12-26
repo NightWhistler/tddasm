@@ -5,6 +5,7 @@ import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Accumulator;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
@@ -311,6 +312,20 @@ public class ProgramBuilder {
 
     private ProgramBuilder withElement(ProgramElement element) {
         return new ProgramBuilder(programElements.append(element));
+    }
+
+
+    /**
+     * Registers a piece of Java code to be executed if the processor
+     * reaches this point in the program. This works by registering a
+     * Java routine for this address and inserting a NOP opcode in the
+     * compiled code at this point.
+     *
+     * @param javaRoutine A lambda that takes a Processor as an argument
+     * @return
+     */
+    public ProgramBuilder java(Consumer<Processor> javaRoutine) {
+        return withElement(new JavaElement(javaRoutine));
     }
 
     public List<ProgramElement> buildElements() {

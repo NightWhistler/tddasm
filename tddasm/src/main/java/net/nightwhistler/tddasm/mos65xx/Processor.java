@@ -241,7 +241,7 @@ public class Processor {
                 //Since the generic handling will only increase it by 1, we
                 //add an extra increment here.
                 this.programCounter.increment();
-                doInterruptHandling();
+                doInterruptHandling(true);
             }
 
             case CLD -> statusRegister.setDecimalModeFlag(false);
@@ -481,6 +481,11 @@ public class Processor {
         byte[] programData = program.compile();
         int startLocation = program.startAddress().toInt();
 
+        program.elements()
+                .flatMap(e -> e instanceof JavaElement ja ? List.of(ja): List.empty())
+                .map(j -> j.toJavaRoutine(program))
+                .forEach(this::registerJavaRoutine);
+
         setProgramCounter(program.startAddress());
         System.arraycopy(programData, 0, this.memory, startLocation, programData.length);
     }
@@ -533,8 +538,12 @@ public class Processor {
 
     public void requestInterrupt() {
        if (!statusRegister.isInterruptDisableFlagSet()) {
-           doInterruptHandling();
+           doInterruptHandling(true);
        }
+    }
+
+    public void nonMaskableInterrupt() {
+        doInterruptHandling(false);
     }
 
     private void doRTI() {
@@ -544,14 +553,24 @@ public class Processor {
         setProgramCounter(new Operand.TwoByteAddress(newLowByte, newHighByte));
     }
 
-    private void doInterruptHandling() {
+    /**
+     * Does interrupt handling.
+     *
+     * This is not quite right, at the very least this should a
+     * Java routine registered at the right address, but better
+     * would be to use the actual C64 routines.
+     * @param maskable
+     */
+    private void doInterruptHandling(boolean maskable) {
         fireEvent(new ProcessorEvent.InterruptRequest(programCounter));
         pushStack(programCounter.highByte());
         pushStack(programCounter.lowByte());
         pushStack(statusRegister.toByte());
         statusRegister.setInterruptDisableFlag(true);
 
-        if (statusRegister.isBreakCommandFlagSet()) {
+        if (!maskable) {
+            performOperation(operation(JMP, address(0x0318).indirect()));
+        } else if (statusRegister.isBreakCommandFlagSet()) {
             performOperation(operation(JMP, address(0x0316).indirect()));
         } else {
             performOperation(operation(JMP, address(0x0314).indirect()));
@@ -560,6 +579,7 @@ public class Processor {
 
     private void executeKernalRoutine() {
         JavaRoutine javaRoutine = this.kernalRoutines.get(programCounter);
+        programCounter = programCounter.plus(javaRoutine.size());
         fireEvent(new ProcessorEvent.JavaRoutineExecuted(programCounter, javaRoutine.getClass().getSimpleName()));
         javaRoutine.execute(this);
         performOperation(javaRoutine.endWith());

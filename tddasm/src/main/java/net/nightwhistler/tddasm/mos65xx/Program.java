@@ -89,6 +89,10 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
         return offsets().get(elementIndex)._1;
     }
 
+    public Option<Operand.TwoByteAddress> addressOfElement(ProgramElement programElement) {
+        return offsets().find(o -> o._2.equals(programElement)).map(Tuple2::_1);
+    }
+
     /**
      * Returns the ProgramElements associated with a specific memory location (if any)
      * @param location
@@ -144,8 +148,8 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
                 //All relative values are calculated with the offset _after_ the instruction
                 Operation op = operationProvider.provide(this, absoluteOffset.plus(operationProvider.length()));
                 elementData = op.bytes();
-            } else if (element instanceof Data data){
-                elementData = data.bytes();
+            } else if (element instanceof ProgramElement.BytesElement bytesElement){
+                elementData = bytesElement.bytes();
             } else {
                 elementData = new byte[0];
             }

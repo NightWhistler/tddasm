@@ -5,7 +5,7 @@ import io.vavr.collection.Stream;
 
 import java.util.stream.Collectors;
 
-public record Data(byte[] bytes) implements ProgramElement {
+public record Data(byte[] bytes) implements ProgramElement, ProgramElement.BytesElement {
 
     @Override
     public String toString() {

@@ -1,5 +1,6 @@
 package net.nightwhistler.tddasm.mos65xx;
 
+import static net.nightwhistler.tddasm.mos65xx.OpCode.NOP;
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
 
 /**
@@ -31,11 +32,11 @@ public interface JavaRoutine {
 
     /**
      * What the processor should execute after running this Java routine.
-     * The default is RTS, should be RTI for interrupt handlers.
+     * The default is NOP, should be RTI for interrupt handlers.
      * @return
      */
     default Operation endWith() {
-        return Operation.operation(RTS);
+        return Operation.operation(NOP);
     }
 
     /**

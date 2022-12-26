@@ -9,6 +9,7 @@ import net.nightwhistler.tddasm.mos65xx.Operation;
 import net.nightwhistler.tddasm.mos65xx.Processor;
 
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
+import static net.nightwhistler.tddasm.mos65xx.Operand.noValue;
 
 /**
  * Java implementation of the CHROUT kernal routine.
@@ -50,5 +51,10 @@ public class ChrOut implements JavaRoutine {
     public void execute(Processor processor) {
         processor.pokeValue(C64Constants.TEXT_MODE_SCREEN_MEMORY_START.plus(offset), ScreenCode.toScreenCode(processor.getAccumulatorValue()));
         offset++;
+    }
+
+    @Override
+    public Operation endWith() {
+        return new Operation(OpCode.RTS, noValue());
     }
 }

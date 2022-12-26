@@ -34,7 +34,6 @@ public class ArgumentPassing {
 
     public static Program twoByteAddition() {
 
-
         return new ProgramBuilder()
                 .jmp("main")
             .label("variables")
@@ -51,11 +50,17 @@ public class ArgumentPassing {
                 .jsr("two_byte_add")
                 .rts()
             .label("two_byte_add")
+
+                .java((p) -> System.out.println("Calling routine two_byte_add"))
+
                 .tsx()
                 .clc()
                 //First add low bytes
                 .lda(stackMinusReturnAddress.plus(0).xIndexed())
                 .adc(stackMinusReturnAddress.plus(2).xIndexed())
+
+                .java((p) -> System.out.println("First add, accumulator is " + p.getAccumulatorValue()))
+
                 .ldy(value(0))
                 .sta(label("result").yIndexed())
                 //Then add high bytes, with carry
