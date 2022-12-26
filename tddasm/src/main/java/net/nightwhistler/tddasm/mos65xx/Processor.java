@@ -17,6 +17,9 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
 
 public class Processor {
+
+    public static Operand.TwoByteAddress STACK_BASE_ADDRESS = address(0x0100);
+
     private byte accumulator;
     private byte xRegister;
     private byte yRegister;
@@ -130,8 +133,9 @@ public class Processor {
 
             case SBC -> {
                 byte oldAcc = accumulator;
-                byte carryComplement = (byte) (statusRegister.isCarryFlagSet() ? 0 : 1);
-                setFlags(accumulator = (byte) (accumulator - value(operation.operand()) - carryComplement));
+                int carryComplement = (byte) (statusRegister.isCarryFlagSet() ? 0 : 1);
+                int result = toUnsignedInt(accumulator) - toUnsignedInt(value(operation.operand())) - carryComplement;
+                setFlags(accumulator = (byte) result);
                 statusRegister.setCarryFlag(!statusRegister.isNegativeFlagSet());
                 setOverflow(oldAcc, accumulator);
             }
@@ -139,7 +143,7 @@ public class Processor {
             case ADC -> {
                 byte oldAcc = accumulator;
                 int carryValue = statusRegister.isCarryFlagSet() ? 1: 0;
-                int result = accumulator + value(operation.operand()) + carryValue;
+                int result = toUnsignedInt(accumulator) + toUnsignedInt(value(operation.operand())) + carryValue;
                 setFlags(accumulator = (byte) (result & 0xFFFF));
                 statusRegister.setCarryFlag(result > 0xFF);
                 setOverflow(oldAcc, accumulator);
@@ -458,13 +462,13 @@ public class Processor {
     }
 
     public void pushStack(byte value) {
-        memory[stackPointer] = value;
+        memory[STACK_BASE_ADDRESS.toInt() + stackPointer] = value;
         stackPointer--;
     }
 
     public byte popStack() {
         stackPointer++;
-        return memory[stackPointer];
+        return memory[STACK_BASE_ADDRESS.toInt() + stackPointer];
     }
 
     /**
@@ -477,6 +481,7 @@ public class Processor {
         byte[] programData = program.compile();
         int startLocation = program.startAddress().toInt();
 
+        setProgramCounter(program.startAddress());
         System.arraycopy(programData, 0, this.memory, startLocation, programData.length);
     }
 

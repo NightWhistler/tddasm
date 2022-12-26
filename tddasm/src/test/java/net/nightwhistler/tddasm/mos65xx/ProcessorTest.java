@@ -2,7 +2,6 @@ package net.nightwhistler.tddasm.mos65xx;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -316,6 +315,37 @@ class ProcessorTest {
     }
 
     @Test
+    public void testADC() {
+        Processor processor = new Processor();
+        processor.performOperation(operation(CLC));
+        processor.performOperation(operation(LDA, value(3)));
+        processor.performOperation(operation(ADC, value(5)));
+
+        assertEquals(8, processor.getAccumulatorValue());
+        assertFalse(processor.isCarryFlagSet());
+        assertFalse(processor.isOverflowFlagSet());
+
+        processor.performOperation(operation(CLC));
+        processor.performOperation(operation(LDA, value(0xFF)));
+        processor.performOperation(operation(ADC, value(0xFF)));
+
+        assertEquals((byte) 0xFE, processor.getAccumulatorValue());
+        assertTrue(processor.isNegativeFlagSet(), "negative flag should be set");
+        assertFalse(processor.isOverflowFlagSet(), "Overflow flag should not be set");
+        assertTrue(processor.isCarryFlagSet(), "carry flag should be set");
+
+        processor.performOperation(operation(CLC));
+        processor.performOperation(operation(LDA, value(3)));
+        processor.performOperation(operation(ADC, value(-5)));
+
+        assertEquals((byte) -2, processor.getAccumulatorValue());
+        assertTrue(processor.isNegativeFlagSet(), "negative flag should be set");
+        assertTrue(processor.isOverflowFlagSet(), "Overflow flag should be set");
+        assertFalse(processor.isCarryFlagSet(), "carry flag should not be set");
+
+    }
+
+    @Test
     public void testInc() {
         Processor processor = new Processor();
         processor.performOperation(operation(LDA, value(5)));
@@ -371,6 +401,7 @@ class ProcessorTest {
 
         Processor processor = new Processor();
         processor.load(simpleInterruptProgram);
+        processor.registerEventListener(e -> System.out.println(e));
 
         processor.setProgramCounter(simpleInterruptProgram.startAddress());
 

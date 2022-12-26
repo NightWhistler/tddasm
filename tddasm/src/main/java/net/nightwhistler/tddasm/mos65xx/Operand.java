@@ -52,6 +52,10 @@ public sealed interface Operand {
     sealed interface AddressOperand extends ConcreteOperand {
         byte highByte();
         byte lowByte();
+
+        AddressOperand plus(int value);
+
+        AddressOperand minus(int value);
     }
 
     record NoValue(AddressingMode addressingMode) implements ConcreteOperand {
@@ -92,6 +96,16 @@ public sealed interface Operand {
 
         public OneByteAddress yIndexed() {
             return new OneByteAddress(AddressingMode.ZeroPageAddressY, byteValue);
+        }
+
+        @Override
+        public AddressOperand plus(int value) {
+            return new OneByteAddress(addressingMode, (byte) (byteValue + value));
+        }
+
+        @Override
+        public AddressOperand minus(int value) {
+            return new OneByteAddress(addressingMode, (byte) (byteValue - value));
         }
 
         public OneByteAddress indirectIndexedY() {
@@ -164,6 +178,11 @@ public sealed interface Operand {
             return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
         }
 
+        public TwoByteAddress minus(int offset) {
+            int newAddress = toInt() - offset;
+            return new TwoByteAddress(this.addressingMode, ByteUtils.lowByte(newAddress), ByteUtils.highByte(newAddress));
+        }
+
         public TwoByteAddress increment() {
             return plus(1);
         }
@@ -219,6 +238,17 @@ public sealed interface Operand {
             return new LabelTransformation(this, address -> value(address.highByte()),
                     1, "#>" + label);
         }
+
+        public VirtualOperand plus(int value) {
+            return new LabelTransformation(this, address -> address.plus(value),
+                    1, "#>" + label);
+        }
+
+        public VirtualOperand minus(int value) {
+            return new LabelTransformation(this, address -> address.minus(value),
+                    1, "#>" + label);
+        }
+
 
         @Override
         public int length() {

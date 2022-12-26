@@ -10,7 +10,6 @@ import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 
 public class ColourCharacters {
 
-
     @CompileProgram("vic-characters.prg")
     public static Program vicCharactersCompilable() {
         return vicCharacters().withBASICStarter();

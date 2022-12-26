@@ -1,11 +1,9 @@
 package net.nightwhistler.rleviewer;
 
 import net.nightwhistler.tddasm.c64.kernal.ChrOut;
-import net.nightwhistler.tddasm.mos65xx.OpCode;
-import net.nightwhistler.tddasm.mos65xx.Operand;
-import net.nightwhistler.tddasm.mos65xx.Operation;
-import net.nightwhistler.tddasm.mos65xx.Processor;
 import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
+import net.nightwhistler.tddasm.mos65xx.Operand;
+import net.nightwhistler.tddasm.mos65xx.Processor;
 
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;

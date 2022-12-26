@@ -301,6 +301,10 @@ public class ProgramBuilder {
         return withOperation(OpCode.CMP, operand);
     }
 
+    public ProgramBuilder comment(String comment) {
+        return withElement(new Comment(comment));
+    }
+
     private ProgramBuilder withOperation(OpCode opCode, Operand operand) {
         return withElement(new OperationProvider(opCode, operand));
     }
