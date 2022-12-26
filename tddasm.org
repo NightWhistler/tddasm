@@ -36,7 +36,7 @@
   Maybe add a runFromLabel(String) method on the Processor as well?
    - Would be convenient and friendly.
 
-* TODO Implement NMI as well
+* DONE Implement NMI as well
 * DONE Create a Compiler class that scans for annotated classes
   It should then compile them and put the output in target/mos62xx
 * TODO Create a parser for .asm files
