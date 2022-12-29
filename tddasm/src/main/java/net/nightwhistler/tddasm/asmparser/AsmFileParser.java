@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class AsmFileParser {
 
 //    private static final Pattern pattern = Pattern.compile("\s*([a-zA-Z]{0,3})\s.*([#$0-9A-Fa-f].*) (;\\w.*)");
-   private static final Pattern pattern = Pattern.compile("\s*([a-zA-Z]{0,3})\s*([#0-9].*)");
+   private static final Pattern pattern = Pattern.compile("\s*([a-zA-Z]{0,3})\s*([#\\$0-9].*)");
 
     public List<ProgramElement> parseLine(String line) {
         Matcher matcher = pattern.matcher(line);
@@ -34,8 +34,15 @@ public class AsmFileParser {
     private Operand parseOperand(String value) {
         if (value.startsWith("#")) {
             return Operand.value(parseByte(value.substring(1)));
+        } else {
+            int intValue = parseByte(value);
+            if (intValue > 0xFF) {
+                return Operand.address(intValue);
+            } else {
+                return Operand.zeroPage(intValue);
+            }
         }
-        throw new UnsupportedOperationException("Not supported yet: " + value);
+//        throw new UnsupportedOperationException("Not supported yet: " + value);
     }
 
     private int parseByte(String value) {
