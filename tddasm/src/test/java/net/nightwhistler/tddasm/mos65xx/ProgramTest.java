@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.vavr.control.Option.none;
 import static io.vavr.control.Option.some;
+import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 import static net.nightwhistler.tddasm.mos65xx.Operand.value;
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,7 +46,7 @@ class ProgramTest {
         List<ProgramElement> elements = testProgram.elementsForLocation(address(0x8005));
         assertEquals(2, elements.size());
         assertEquals(new Label("check"), elements.get(0));
-        assertEquals(new OperationProvider(OpCode.BNE, new Operand.LabelOperand("load_data", AddressingMode.Relative)),
+        assertEquals(new OperationProvider(OpCode.BNE, new Operand.LabelOperand("load_data", Relative)),
                 elements.get(1));
     }
 
@@ -87,6 +88,24 @@ class ProgramTest {
         );
 
         assertArrayEquals(expected, compiledProgram);
+    }
+
+    @Test
+    public void testAddLabel() {
+        Program withLabel = testProgram.addLabel(address(0x8005), "extra_label");
+        assertEquals(8, testProgram.elements().size());
+        assertEquals(9, withLabel.elements().size());
+
+        List<ProgramElement> elements = withLabel.elementsForLocation(address(0x8005));
+        assertEquals(3, elements.size());
+
+        assertEquals(List.of(
+                new Label("extra_label"),
+                new Label("check"),
+                new OperationProvider(OpCode.BNE, new Operand.LabelOperand("load_data", Relative))
+
+        ), elements);
+
     }
 
 

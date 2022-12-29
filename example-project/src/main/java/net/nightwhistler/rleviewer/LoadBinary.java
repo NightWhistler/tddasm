@@ -4,6 +4,9 @@ import net.nightwhistler.tddasm.c64.kernal.ChrOut;
 import net.nightwhistler.tddasm.c64.screen.TextModeScreen;
 import net.nightwhistler.tddasm.mos65xx.Operand;
 import net.nightwhistler.tddasm.mos65xx.Processor;
+import net.nightwhistler.tddasm.mos65xx.Program;
+
+import java.io.PrintWriter;
 
 import static net.nightwhistler.tddasm.mos65xx.OpCode.RTS;
 import static net.nightwhistler.tddasm.mos65xx.Operation.operation;
@@ -15,21 +18,24 @@ public class LoadBinary {
             var stream = new LoadBinary().getClass().getResourceAsStream("/helloworld");
             byte[] data = stream.readAllBytes();
 
-            var start = Operand.address(0x80D);
-            Processor processor = new Processor();
-            processor.registerJavaRoutine(new ChrOut());
-            TextModeScreen screen = new TextModeScreen(processor);
+            Program program = Program.fromBinary(data);
 
-            //Store some RTS (so just return) to stand in for Kernal routines
-            processor.storeOperationAt(Operand.address(0xffba), operation(RTS));
-            processor.storeOperationAt(Operand.address(0xffc0), operation(RTS));
-
-            processor.registerEventListener( e -> System.out.println(e));
-            processor.loadBinary(data);
-
-            processor.run(start);
-
-            System.out.println(screen.getScreenContents());
+            program.printASM(new PrintWriter(System.out), true);
+//            var start = Operand.address(0x80D);
+//            Processor processor = new Processor();
+//            processor.registerJavaRoutine(new ChrOut());
+//            TextModeScreen screen = new TextModeScreen(processor);
+//
+//            //Store some RTS (so just return) to stand in for Kernal routines
+//            processor.storeOperationAt(Operand.address(0xffba), operation(RTS));
+//            processor.storeOperationAt(Operand.address(0xffc0), operation(RTS));
+//
+//            processor.registerEventListener( e -> System.out.println(e));
+//            processor.loadBinary(data);
+//
+//            processor.run(start);
+//
+//            System.out.println(screen.getScreenContents());
         } catch (Exception e) {
             e.printStackTrace();;
         }

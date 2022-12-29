@@ -3,12 +3,15 @@ package net.nightwhistler.tddasm.mos65xx;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
+import net.nightwhistler.ByteUtils;
 
 import java.io.PrintWriter;
 
 import static io.vavr.control.Option.none;
 import static io.vavr.control.Option.some;
 import static net.nightwhistler.ByteUtils.bytes;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JMP;
+import static net.nightwhistler.tddasm.mos65xx.OpCode.JSR;
 import static net.nightwhistler.tddasm.mos65xx.Operand.address;
 
 public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> elements) {
@@ -99,7 +102,12 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
      * @return
      */
     public List<ProgramElement> elementsForLocation(Operand.TwoByteAddress location) {
-        return offsets().filter(t -> t._1.equals(location))
+        return elementsForLocation(location, offsets());
+    }
+
+    private List<ProgramElement> elementsForLocation(Operand.TwoByteAddress location,
+                                                     List<Tuple2<Operand.TwoByteAddress, ProgramElement>> offsets ) {
+        return offsets.filter(t -> t._1.equals(location))
                 .map(Tuple2::_2);
     }
 
@@ -126,6 +134,96 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
         printWriter.flush();
 
+    }
+
+    private static boolean shouldAddLabel(Program input, Operand.TwoByteAddress address, List<Tuple2<Operand.TwoByteAddress, ProgramElement>> offsets) {
+        var elementsForLocation = input.elementsForLocation(address, offsets);
+
+        if (elementsForLocation.isEmpty()) {
+            return false; //Jump outside the program
+        }
+
+        return elementsForLocation.filter(e -> e instanceof Label).isEmpty();
+    }
+
+    private static final List<OpCode> relativeJumps =
+            List.of(OpCode.values())
+                    .filter(o -> ! o.isIllegal())
+                    .flatMap(o -> o.addressingModeMappings())
+                    .filter(m -> m.addressingMode() == AddressingMode.Relative)
+                    .map(m -> m.opCode());
+
+    private static Program generateLabels(Program input) {
+        Program withLabels = input;
+        int labelCounter = 0;
+        int subRoutineCounter = 0;
+
+        var offsets = input.offsets();
+
+        for (var offset: offsets) {
+            String lastLabel = null;
+
+            if (offset._2 instanceof OperationProvider op) {
+                if (op.opCode() == JSR && op.operand() instanceof Operand.TwoByteAddress address) {
+                    if (shouldAddLabel(withLabels, address, offsets)) {
+                        lastLabel = "subroutine_" + subRoutineCounter++;
+                        withLabels = withLabels.addLabel(
+                                address,
+                                lastLabel,
+                                offsets
+                                );
+                        offsets = withLabels.offsets();
+                    }
+                } else if (relativeJumps.contains(op.opCode()) && op.operand() instanceof Operand.OneByteAddress address) {
+                    Operand.TwoByteAddress dest = offset._1.plus(address.lowByte());
+                    if (shouldAddLabel(withLabels, dest, offsets)) {
+                        lastLabel = "jump_dest_" + labelCounter++;
+                        withLabels = withLabels.addLabel(
+                                dest,
+                                lastLabel,
+                                offsets
+                        );
+                        offsets = withLabels.offsets();
+                    }
+                } else if (op.opCode() == JMP && op.operand() instanceof Operand.TwoByteAddress address) {
+                    if (shouldAddLabel(withLabels, address, offsets)) {
+                        lastLabel = "jump_dest_" + labelCounter++;
+                        withLabels = withLabels.addLabel(
+                                address,
+                                lastLabel,
+                                offsets
+                        );
+                        offsets = withLabels.offsets();
+                    }
+                }
+
+//                if (lastLabel != null) {
+//                    withLabels = new Program(withLabels.startAddress,
+//                            withLabels.elements().replace(op, new OperationProvider(op.opCode(), new Operand.LabelOperand(lastLabel, op.operand().addressingMode()))
+//                            ));
+//                }
+            }
+        }
+
+        return withLabels;
+    }
+
+    public Program addLabel(Operand.TwoByteAddress address, String label) {
+       return addLabel(address, label, offsets());
+    }
+
+    public Program addLabel(Operand.TwoByteAddress address, String label, List<Tuple2<Operand.TwoByteAddress, ProgramElement>> offsets) {
+        int index = offsets.indexWhere(o -> o._1.equals(address));
+        if (index == -1 ) {
+            throw new IllegalArgumentException("Address not found: " + address);
+        }
+
+        List<ProgramElement> beforeElement = elements.slice(0, index);
+        List<ProgramElement> afterElement = elements.slice(index, elements.length());
+        Label labelElement = new Label(label);
+
+        return new Program(startAddress,
+                beforeElement.append(labelElement).appendAll(afterElement));
     }
 
     /**
@@ -160,4 +258,43 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
 
         return result;
     }
+
+    public static Program fromBinary(byte[] binary) {
+        int startAddress = ByteUtils.littleEndianBytesToInt(binary[0], binary[1]);
+        List<ProgramElement> operations = List.empty();
+
+        int counter = 2;
+
+        while (counter < binary.length) {
+            byte opCodeByte = binary[counter++];
+            var maybeMapping = OpCode.findByByteValue(opCodeByte);
+
+            if (maybeMapping.isDefined()) {
+                var mapping = maybeMapping.get();
+
+                int length = mapping.addressingMode().size();
+                byte[] bytes = new byte[length];
+                System.arraycopy(binary, counter, bytes, 0, bytes.length);
+                counter += length;
+
+                operations = operations.append(new OperationProvider(mapping.opCode(), mapping.addressingMode().toOperand(bytes)));
+            } else {
+                if (!operations.isEmpty() && operations.last() instanceof Data lastData) {
+                    byte[] newData = new byte[lastData.bytes().length +1];
+                    System.arraycopy(lastData.bytes(), 0, newData, 0, lastData.length());
+                    newData[lastData.length()] = opCodeByte;
+                    operations = operations.slice(0, operations.length() -1).append(new Data(newData));
+                } else {
+                    operations = operations.append(new Data(new byte[]{opCodeByte}));
+                }
+            }
+        }
+
+        return generateLabels(
+                new ProgramBuilder()
+                .include(operations)
+                .buildProgram(address(startAddress)
+                ));
+    }
+
 }

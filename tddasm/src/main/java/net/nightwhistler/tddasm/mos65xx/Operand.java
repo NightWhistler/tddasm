@@ -269,7 +269,7 @@ public sealed interface Operand {
             return switch (addressingMode) {
                 case AbsoluteAddressX -> label + ",X";
                 case AbsoluteAddressY -> label + ",Y";
-                default -> label;
+                default -> label + "(" + addressingMode + ")";
             };
         }
     }
