@@ -208,6 +208,10 @@ public record Program(Operand.TwoByteAddress startAddress, List<ProgramElement> 
         return withLabels;
     }
 
+    public Program generateLabels() {
+        return generateLabels(this);
+    }
+
     public Program addLabel(Operand.TwoByteAddress address, String label) {
        return addLabel(address, label, offsets());
     }

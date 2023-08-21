@@ -1,4 +1,4 @@
-package net.nightwhistler.rleviewer.asmbook.chapter11;
+package net.nightwhistler.asmbook.chapter11;
 
 import net.nightwhistler.tddasm.annotation.CompileProgram;
 import net.nightwhistler.tddasm.mos65xx.Operand;

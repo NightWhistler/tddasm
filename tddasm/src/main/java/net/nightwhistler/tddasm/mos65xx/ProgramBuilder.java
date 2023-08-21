@@ -6,6 +6,7 @@ import net.nightwhistler.tddasm.c64.screen.ScreenCode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Accumulator;
 import static net.nightwhistler.tddasm.mos65xx.AddressingMode.Relative;
@@ -338,5 +339,9 @@ public class ProgramBuilder {
 
     public Program buildProgram(Operand.TwoByteAddress startAddress) {
         return new Program(startAddress, buildElements());
+    }
+
+    public static ProgramBuilder buildProgram(Function<ProgramBuilder, ProgramBuilder> addActions) {
+        return addActions.apply(new ProgramBuilder());
     }
 }
